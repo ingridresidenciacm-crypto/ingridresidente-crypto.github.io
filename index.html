@@ -1,0 +1,2513 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f4ede0" />
+<title>Lúmen · Clínica Médica</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232c5e3f'/%3E%3Ctext x='50' y='70' font-family='Georgia,serif' font-size='60' font-weight='600' fill='white' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: #f4ede0;
+    overscroll-behavior: none;
+  }
+  .lumen-serif, .lumen-serif * { font-family: 'Fraunces', Georgia, serif; }
+  .lumen-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .lumen-scroll::-webkit-scrollbar-track { background: transparent; }
+  .lumen-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+  .lumen-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+  .lumen-fade-in { animation: fadeIn 0.4s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; }
+  input, textarea, select { font-family: inherit; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid currentColor; outline-offset: 1px; }
+  /* Loader */
+  #initial-loader {
+    position: fixed; inset: 0; background: #f4ede0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; flex-direction: column; gap: 16px;
+  }
+  #initial-loader .logo {
+    width: 60px; height: 60px; border-radius: 14px; background: #2c5e3f;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px;
+    box-shadow: 0 8px 24px rgba(44,94,63,0.3);
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(0.95); } }
+  #initial-loader .label { color: #6b5d4a; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div id="initial-loader">
+  <div class="logo">L</div>
+  <div class="label">Lúmen · Clínica Médica</div>
+</div>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef } = React;
+
+// ============= INLINE SVG ICONS =============
+const Icon = ({ d, size = 16, stroke = 2, fill = 'none', children, ...rest }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+    fill={fill} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round"
+    strokeLinejoin="round" {...rest}>
+    {d ? <path d={d} /> : children}
+  </svg>
+);
+const I = {
+  Dashboard: (p) => <Icon {...p}><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></Icon>,
+  Book: (p) => <Icon {...p}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></Icon>,
+  Layers: (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></Icon>,
+  File: (p) => <Icon {...p}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></Icon>,
+  Pill: (p) => <Icon {...p}><path d="M10.5 20.5 20.5 10.5a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></Icon>,
+  GitBranch: (p) => <Icon {...p}><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></Icon>,
+  Calendar: (p) => <Icon {...p}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></Icon>,
+  Plus: (p) => <Icon {...p}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></Icon>,
+  Search: (p) => <Icon {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></Icon>,
+  Moon: (p) => <Icon {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></Icon>,
+  Sun: (p) => <Icon {...p}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></Icon>,
+  ChevL: (p) => <Icon {...p}><polyline points="15 18 9 12 15 6"/></Icon>,
+  ChevR: (p) => <Icon {...p}><polyline points="9 18 15 12 9 6"/></Icon>,
+  ChevD: (p) => <Icon {...p}><polyline points="6 9 12 15 18 9"/></Icon>,
+  ChevU: (p) => <Icon {...p}><polyline points="18 15 12 9 6 15"/></Icon>,
+  Star: ({ filled, ...p }) => <Icon {...p} fill={filled ? 'currentColor' : 'none'}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></Icon>,
+  Flag: ({ filled, ...p }) => <Icon {...p} fill={filled ? 'currentColor' : 'none'}><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></Icon>,
+  Clock: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></Icon>,
+  Filter: (p) => <Icon {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></Icon>,
+  X: (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>,
+  Check: (p) => <Icon {...p}><polyline points="20 6 9 17 4 12"/></Icon>,
+  ArrowL: (p) => <Icon {...p}><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></Icon>,
+  Upload: (p) => <Icon {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></Icon>,
+  Edit: (p) => <Icon {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></Icon>,
+  Trash: (p) => <Icon {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></Icon>,
+  Sparkles: (p) => <Icon {...p}><path d="M12 3l1.9 5.5L19 10l-5.1 1.5L12 17l-1.9-5.5L5 10l5.1-1.5L12 3z"/><path d="M19 17l.7 1.7L21 19l-1.3.3L19 21l-.7-1.7L17 19l1.3-.3z"/></Icon>,
+  Target: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Icon>,
+  Award: (p) => <Icon {...p}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></Icon>,
+  Trend: (p) => <Icon {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></Icon>,
+  Alert: (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>,
+  BookMark: (p) => <Icon {...p}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></Icon>,
+  Bookmark: ({ filled, ...p }) => <Icon {...p} fill={filled ? 'currentColor' : 'none'}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></Icon>,
+  Save: (p) => <Icon {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></Icon>,
+  Play: (p) => <Icon {...p}><polygon points="5 3 19 12 5 21 5 3"/></Icon>,
+  Heart: (p) => <Icon {...p}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></Icon>,
+  Brain: (p) => <Icon {...p}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04Z"/></Icon>,
+  Activity: (p) => <Icon {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></Icon>,
+  Wind: (p) => <Icon {...p}><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></Icon>,
+  Stetho: (p) => <Icon {...p}><path d="M11 2v2"/><path d="M5 2v2"/><path d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"/><path d="M8 15a6 6 0 0 0 12 0v-3"/><circle cx="20" cy="10" r="2"/></Icon>,
+  Menu: (p) => <Icon {...p}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></Icon>,
+  Bell: (p) => <Icon {...p}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></Icon>,
+};
+
+// ============= STORAGE (localStorage) =============
+const storage = {
+  get(key, fallback = null) {
+    try {
+      const v = localStorage.getItem(key);
+      return v ? JSON.parse(v) : fallback;
+    } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch { return false; }
+  },
+};
+
+// ============= CONSTANTS =============
+const slugify = (txt) => String(txt || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || ('item-' + Date.now());
+
+const TEMAS_BASE = [
+  { id: 'cardio', nome: 'Cardiologia', icon: I.Heart, cor: '#b85450' },
+  { id: 'pneumo', nome: 'Pneumologia', icon: I.Wind, cor: '#5b8a9c' },
+  { id: 'infecto', nome: 'Infectologia', icon: I.Activity, cor: '#4f8f6d' },
+  { id: 'nefro', nome: 'Nefrologia', icon: I.Activity, cor: '#7c6f9a' },
+  { id: 'gastro', nome: 'Gastroenterologia', icon: I.Activity, cor: '#c47d3d' },
+  { id: 'reumato', nome: 'Reumatologia', icon: I.Activity, cor: '#8a6d3b' },
+  { id: 'geriatria', nome: 'Geriatria', icon: I.Stetho, cor: '#6b8e5a' },
+  { id: 'neuro', nome: 'Neurologia', icon: I.Brain, cor: '#5e7ba0' },
+  { id: 'derma', nome: 'Dermatologia', icon: I.Sparkles, cor: '#c47a8a' },
+  { id: 'onco', nome: 'Oncologia', icon: I.Target, cor: '#6a4f7a' },
+  { id: 'outros', nome: 'Outros', icon: I.Plus, cor: '#7a7268' },
+];
+const TEMAS_EXTRAS = storage.get('lumen_temas_extras', []);
+const TEMAS = [...TEMAS_BASE, ...TEMAS_EXTRAS.filter(t => t?.id && !TEMAS_BASE.some(b => b.id === t.id))];
+
+const INSTITUICOES_INICIAIS = ['USP-RP', 'USP-SP', 'FAMERP', 'ENARE', 'SES-DF', 'SUS-SP'];
+const ANOS_EXTRAS = storage.get('lumen_anos_extras', []);
+const ANOS_QUESTOES = [...new Set([...Array.from({ length: 9 }, (_, i) => 2019 + i), ...ANOS_EXTRAS.map(Number).filter(Boolean)])].sort((a,b)=>a-b);
+const ESPECIALIDADES = TEMAS;
+const CATEGORIAS_MED = ['Antibióticos', 'Antifúngicos', 'Antivirais', 'Drogas vasoativas', 'Reposição de eletrólitos', 'Corticoides', 'Imunossupressores', 'Anticoagulantes', 'Medicações de emergência', 'Ferro venoso', 'Sedação/analgesia', 'Prescrições por doença', 'Outros'];
+
+function salvarEspecialidadeGlobal(nome) {
+  const nomeLimpo = String(nome || '').trim();
+  if (!nomeLimpo) return;
+  const id = slugify(nomeLimpo);
+  const extras = storage.get('lumen_temas_extras', []);
+  const existe = [...TEMAS_BASE, ...extras].some(t => t.id === id || String(t.nome).toLowerCase() === nomeLimpo.toLowerCase());
+  if (!existe) storage.set('lumen_temas_extras', [...extras, { id, nome: nomeLimpo, icon: I.Plus, cor: '#7a7268' }]);
+  location.reload();
+}
+function salvarAnoGlobal(ano) {
+  const n = Number(ano);
+  if (!n || n < 1900 || n > 2100) return;
+  const extras = storage.get('lumen_anos_extras', []);
+  storage.set('lumen_anos_extras', [...new Set([...extras.map(Number), n])]);
+  location.reload();
+}
+
+const NAV = [
+  { id: 'dashboard', label: 'Painel', icon: I.Dashboard },
+  { id: 'questoes', label: 'Questões', icon: I.Book },
+  { id: 'simulado', label: 'Simulado', icon: I.Clock },
+  { id: 'flashcards', label: 'Flashcards', icon: I.Layers },
+  { id: 'cronograma', label: 'Cronograma', icon: I.Calendar },
+  { id: 'calculadoras', label: 'Calculadoras & Escores', icon: I.Target },
+  { id: 'artigos', label: 'Biblioteca', icon: I.BookMark },
+  { id: 'antimicrobianos', label: 'Guia de Antimicrobianos', icon: I.Activity },
+  { id: 'medicamentos', label: 'Medicamentos', icon: I.Pill },
+  { id: 'fluxogramas', label: 'Fluxogramas', icon: I.GitBranch },
+];
+
+const QUESTAO_EXEMPLO = {
+  id: 'q-exemplo-1',
+  numero: 1, instituicao: 'USP-RP', ano: 2024,
+  tema: 'cardio', subtema: 'Insuficiência Cardíaca',
+  enunciado: 'Mulher, 67 anos, queixa-se de dispneia aos esforços há 4 meses, atualmente em classe funcional II da NYHA, associada a desconforto precordial aos esforços CCS II. Está em tratamento para HAS e hipotireoidismo com losartana 50 mg 2x/dia, hidroclorotiazida 25 mg 1x/dia e levotiroxina 75 mcg 1x/dia. Exame físico: altura: 1,60 m; peso: 90 kg; FC: 78 bpm; PA: 134x72 mmHg, estertores pulmonares bibasais, edema de tornozelo bilateral 1+/4+, sem outras particularidades. Eletrocardiograma: normal; ecocardiograma: fração de ejeção do ventrículo esquerdo = 58%, sem alterações significativas e angiotomografia de coronarianas com escore de cálcio coronariano de 50 UA, sem doença arterial coronariana obstrutiva significativa. NT proBNP: 100 pg/mL (VR < 125). Considerando a principal hipótese diagnóstica, qual é o próximo passo na investigação?',
+  alternativas: [
+    { letra: 'A', texto: 'Cineangiocoronariografia.' },
+    { letra: 'B', texto: 'Cintilografia de perfusão miocárdica.' },
+    { letra: 'C', texto: 'Ressonância magnética cardíaca.' },
+    { letra: 'D', texto: 'Ecocardiograma de estresse diastólico.', comentario: 'Correta. Teste indicado quando a probabilidade pré-teste de ICFEp é intermediária.' },
+    { letra: 'E', texto: '', comentario: '' },
+  ],
+  gabarito: 'D',
+  comentarioBreve: 'Quadro de IC com FE preservada (ICFEp). O escore H₂FPEF resulta em valor intermediário, indicando ecocardiograma de estresse diastólico como próximo passo.',
+  dicaProva: 'Em paciente obesa com suspeita de ICFEp, BNP/NT-proBNP pode vir falsamente baixo. Se probabilidade intermediária, pense em teste funcional/eco de estresse diastólico.',
+  comentarioDetalhado: 'A paciente apresenta sintomas de IC (dispneia aos esforços, estertores, edema) com FEVE preservada (58%). O NT-proBNP de 100 pg/mL pode ser falso-negativo dada a obesidade (IMC 35,2). O escore H₂FPEF avalia probabilidade de ICFEp: idade >60 (1pt), HAS+≥2 anti-hipertensivos (1pt), IMC>30 (2pts) = 4 pontos (zona intermediária). Próximo passo: ecocardiograma de estresse diastólico para confirmar disfunção diastólica.',
+  checklist: [
+    'Identificou suspeita de ICFEp pelos sintomas e FE normal',
+    'Reconheceu obesidade como causa de NT-proBNP falso-negativo',
+    'Calculou escore H₂FPEF e classificou como zona intermediária',
+    'Indicou ecocardiograma de estresse diastólico como próximo passo',
+  ],
+  tags: ['ICFEp', 'H2FPEF', 'NT-proBNP'],
+  dificuldade: 'media', fonte: 'USP-RP 2024 - R+ Clínica Médica',
+  resposta: null, acertou: null, checklistRespostas: {},
+  revisarDepois: false, favorita: false, dataResposta: null,
+};
+
+const MEDICAMENTOS_EXEMPLO = [
+  {
+    id: 'med-noradrenalina', nome: 'Noradrenalina', classe: 'Droga vasoativa', categoria: 'Drogas vasoativas',
+    indicacao: 'Choque séptico, choque distributivo. Vasopressor de primeira linha.',
+    dose: '0,01 - 3 mcg/kg/min (iniciar com 0,05 mcg/kg/min)',
+    diluicao: '4 ampolas (16 mg) + SG 5% 234 mL = 250 mL (concentração 64 mcg/mL)',
+    velocidade: 'Bomba de infusão contínua, titular conforme PAM alvo ≥ 65 mmHg',
+    doseMax: '3 mcg/kg/min', ajusteRenal: 'Não requer ajuste',
+    cuidados: 'Acesso venoso central preferencial. Risco de necrose se extravasamento. Monitorização de PA invasiva recomendada.',
+    obs: 'Vasopressor de primeira linha em choque séptico (Surviving Sepsis 2021). Considerar associar vasopressina se dose >0,25 mcg/kg/min.',
+    tags: ['UTI', 'choque', 'sepse'],
+  },
+  {
+    id: 'med-piptazo', nome: 'Piperacilina-Tazobactam', classe: 'β-lactâmico + inibidor', categoria: 'Antibióticos',
+    indicacao: 'Infecções graves por Gram-negativos, anaeróbios, Pseudomonas. Sepse de foco indefinido.',
+    dose: '4,5 g EV de 6/6h (em infusão estendida 4h)',
+    diluicao: '1 frasco (4,5 g) + SF 0,9% 100 mL',
+    velocidade: 'Infusão estendida em 4h (preferencial em sepse - melhor efeito tempo-dependente)',
+    doseMax: '18 g/dia',
+    ajusteRenal: 'ClCr 20-40: 3,375 g 6/6h | ClCr <20: 2,25 g 6/6h | HD: 2,25 g 8/8h pós-diálise',
+    cuidados: 'Risco de nefrotoxicidade quando combinado com vancomicina. Não cobre MRSA, ESBL, KPC.',
+    obs: 'Cobertura ampla. Considerar em sepse de foco indefinido ou infecções polimicrobianas.',
+    tags: ['antibiótico', 'sepse', 'pseudomonas'],
+  },
+];
+
+// ============= MAIN APP =============
+function App() {
+  const [page, setPage] = useState('dashboard');
+  const [theme, setTheme] = useState(() => storage.get('lumen_theme', 'light'));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [questoes, setQuestoes] = useState(() => storage.get('lumen_questoes', [QUESTAO_EXEMPLO]));
+  const [flashcards, setFlashcards] = useState(() => storage.get('lumen_flashcards', []));
+  const [artigos, setArtigos] = useState(() => storage.get('lumen_artigos', []));
+  const [calculadoras, setCalculadoras] = useState(() => storage.get('lumen_calculadoras_escores', []));
+  const [antimicrobianos, setAntimicrobianos] = useState(() => storage.get('lumen_antimicrobianos', []));
+  const [medicamentos, setMedicamentos] = useState(() => storage.get('lumen_medicamentos', MEDICAMENTOS_EXEMPLO));
+  const [fluxogramas, setFluxogramas] = useState(() => storage.get('lumen_fluxogramas', []));
+  const [cronograma, setCronograma] = useState(() => storage.get('lumen_cronograma', { semanas: [] }));
+  const [instituicoes, setInstituicoes] = useState(() => storage.get('lumen_instituicoes', INSTITUICOES_INICIAIS));
+
+  useEffect(() => { storage.set('lumen_questoes', questoes); }, [questoes]);
+  useEffect(() => { storage.set('lumen_flashcards', flashcards); }, [flashcards]);
+  useEffect(() => { storage.set('lumen_artigos', artigos); }, [artigos]);
+  useEffect(() => { storage.set('lumen_calculadoras_escores', calculadoras); }, [calculadoras]);
+  useEffect(() => { storage.set('lumen_antimicrobianos', antimicrobianos); }, [antimicrobianos]);
+  useEffect(() => { storage.set('lumen_medicamentos', medicamentos); }, [medicamentos]);
+  useEffect(() => { storage.set('lumen_fluxogramas', fluxogramas); }, [fluxogramas]);
+  useEffect(() => { storage.set('lumen_cronograma', cronograma); }, [cronograma]);
+  useEffect(() => { storage.set('lumen_instituicoes', instituicoes); }, [instituicoes]);
+  useEffect(() => {
+    storage.set('lumen_theme', theme);
+    document.body.style.background = theme === 'dark' ? '#1a1814' : '#f4ede0';
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1a1814' : '#f4ede0');
+  }, [theme]);
+
+  useEffect(() => {
+    const loader = document.getElementById('initial-loader');
+    if (loader) setTimeout(() => loader.style.display = 'none', 200);
+  }, []);
+
+  const isDark = theme === 'dark';
+  const C = isDark ? {
+    bg: '#1a1814', card: '#252119', cardElev: '#2d2820', border: '#3d3528',
+    borderSoft: '#332c22', text: '#f0e8d4', textMuted: '#b5a78b', textSoft: '#8a7d65',
+    accent: '#7da876', accentDeep: '#a8c89e', accentSoft: '#2d3a2d',
+    highlight: '#3d3528', success: '#7da876', error: '#d97a72', warn: '#d4a04a'
+  } : {
+    bg: '#f4ede0', card: '#fbf6ea', cardElev: '#ffffff', border: '#d6c8a8',
+    borderSoft: '#e3d8b8', text: '#2a2620', textMuted: '#6b5d4a', textSoft: '#8a7d65',
+    accent: '#2c5e3f', accentDeep: '#1f4530', accentSoft: '#dde6d4',
+    highlight: '#ebe1c8', success: '#2c5e3f', error: '#b85450', warn: '#c47d3d'
+  };
+
+  const sharedProps = {
+    questoes, setQuestoes, flashcards, setFlashcards, artigos, setArtigos,
+    calculadoras, setCalculadoras, antimicrobianos, setAntimicrobianos,
+    medicamentos, setMedicamentos, fluxogramas, setFluxogramas,
+    cronograma, setCronograma, instituicoes, setInstituicoes,
+    setPage, C, isDark
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh', minHeight: '100dvh', background: C.bg, color: C.text, display: 'flex',
+      transition: 'background 0.3s, color 0.3s'
+    }}>
+      <Sidebar
+        page={page} setPage={setPage} C={C}
+        theme={theme} setTheme={setTheme}
+        mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+      />
+      <main className="lumen-main" style={{
+        flex: 1, minHeight: '100vh', minHeight: '100dvh', minWidth: 0,
+        display: 'flex', flexDirection: 'column'
+      }}>
+        <TopBar
+          C={C} isDark={isDark} theme={theme} setTheme={setTheme}
+          mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen}
+          page={page} {...sharedProps}
+        />
+        <div style={{ padding: '24px clamp(16px, 4vw, 48px) 80px', maxWidth: 1400, margin: '0 auto', width: '100%', flex: 1 }}>
+          {page === 'dashboard' && <Dashboard {...sharedProps} />}
+          {page === 'questoes' && <Questoes {...sharedProps} />}
+          {page === 'simulado' && <Simulado {...sharedProps} />}
+          {page === 'flashcards' && <Flashcards {...sharedProps} />}
+          {page === 'cronograma' && <Cronograma {...sharedProps} />}
+          {page === 'calculadoras' && <CalculadorasEscores {...sharedProps} />}
+          {page === 'artigos' && <Artigos {...sharedProps} />}
+          {page === 'antimicrobianos' && <GuiaAntimicrobianos {...sharedProps} />}
+          {page === 'medicamentos' && <Medicamentos {...sharedProps} />}
+          {page === 'fluxogramas' && <Fluxogramas {...sharedProps} />}
+        </div>
+      </main>
+      <style>{`
+        @media (min-width: 900px) {
+          .lumen-sidebar { transform: translateX(0) !important; }
+          .lumen-main { margin-left: 240px; }
+          .lumen-mobile-menu { display: none !important; }
+          .lumen-overlay { display: none !important; }
+        }
+        @media (max-width: 899px) {
+          .lumen-mobile-menu { display: inline-flex !important; }
+          .lumen-grid-resp { grid-template-columns: 1fr !important; }
+          .lumen-search-text { display: none !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ============= SIDEBAR =============
+function Sidebar({ page, setPage, C, mobileMenuOpen, setMobileMenuOpen }) {
+  const navigate = (id) => { setPage(id); setMobileMenuOpen(false); };
+  return (
+    <>
+      {mobileMenuOpen && (
+        <div className="lumen-overlay" onClick={() => setMobileMenuOpen(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40,
+        }} />
+      )}
+      <aside className="lumen-sidebar" style={{
+        width: 240, background: C.card, borderRight: `1px solid ${C.borderSoft}`,
+        position: 'fixed', top: 0, left: 0, height: '100vh', height: '100dvh',
+        display: 'flex', flexDirection: 'column', zIndex: 50,
+        transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.25s ease',
+      }}>
+        <div style={{ padding: '24px 20px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 8, background: C.accent,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', fontWeight: 700, fontFamily: 'Fraunces, serif', fontSize: 20,
+            boxShadow: `0 2px 8px ${C.accent}40`,
+          }}>L</div>
+          <div>
+            <div className="lumen-serif" style={{
+              fontSize: 22, fontWeight: 600, color: C.text, lineHeight: 1, letterSpacing: '-0.02em'
+            }}>Lúmen</div>
+            <div style={{ fontSize: 10.5, color: C.textSoft, marginTop: 2, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Clínica Médica
+            </div>
+          </div>
+        </div>
+        <nav style={{ flex: 1, padding: '8px 12px', overflowY: 'auto' }} className="lumen-scroll">
+          {NAV.map(item => {
+            const IconC = item.icon;
+            const active = page === item.id;
+            return (
+              <button key={item.id} onClick={() => navigate(item.id)}
+                style={{
+                  width: '100%', padding: '11px 14px', borderRadius: 8,
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  background: active ? C.accentSoft : 'transparent',
+                  color: active ? C.accent : C.textMuted,
+                  fontSize: 14, fontWeight: active ? 600 : 500,
+                  textAlign: 'left', marginBottom: 2, transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = C.borderSoft; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                <IconC size={17} stroke={active ? 2.2 : 1.8} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{
+          padding: '16px 20px', borderTop: `1px solid ${C.borderSoft}`,
+          fontSize: 11, color: C.textSoft
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.success }} />
+            <span>Dados salvos no navegador</span>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+// ============= TOPBAR =============
+function TopBar({ C, theme, setTheme, mobileMenuOpen, setMobileMenuOpen, page, questoes, flashcards, artigos, calculadoras, antimicrobianos, medicamentos, setPage }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const titles = {
+    dashboard: 'Painel', questoes: 'Banco de Questões', simulado: 'Simulado',
+    flashcards: 'Flashcards', cronograma: 'Cronograma Semanal',
+    calculadoras: 'Calculadoras & Escores',
+    artigos: 'Biblioteca', antimicrobianos: 'Guia de Antimicrobianos', medicamentos: 'Medicamentos & Prescrições',
+    fluxogramas: 'Fluxogramas Pessoais',
+  };
+
+  const results = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase();
+    const r = [];
+    questoes.forEach(item => {
+      if ((item.enunciado || '').toLowerCase().includes(q) || (item.subtema || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Questão', label: `Q${item.numero} • ${item.subtema}`, action: () => setPage('questoes') });
+    });
+    flashcards.forEach(item => {
+      if ((item.frente || '').toLowerCase().includes(q) || (item.verso || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Flashcard', label: item.frente, action: () => setPage('flashcards') });
+    });
+    medicamentos.forEach(item => {
+      if ((item.nome || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Medicamento', label: item.nome, action: () => setPage('medicamentos') });
+    });
+    (calculadoras || []).forEach(item => {
+      if ((item.nome || '').toLowerCase().includes(q) || (item.escore || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Calculadora', label: item.nome || item.escore, action: () => setPage('calculadoras') });
+    });
+    (antimicrobianos || []).forEach(item => {
+      if ((item.agente || '').toLowerCase().includes(q) || (item.classe || '').toLowerCase().includes(q) || (item.antibiotico || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Antimicrobiano', label: item.antibiotico || item.agente || item.classe, action: () => setPage('antimicrobianos') });
+    });
+    artigos.forEach(item => {
+      if ((item.titulo || '').toLowerCase().includes(q))
+        r.push({ tipo: 'Artigo', label: item.titulo, action: () => setPage('artigos') });
+    });
+    return r.slice(0, 8);
+  }, [query, questoes, flashcards, medicamentos, artigos, calculadoras, antimicrobianos]);
+
+  return (
+    <header style={{
+      height: 64, borderBottom: `1px solid ${C.borderSoft}`, background: C.bg,
+      display: 'flex', alignItems: 'center', padding: '0 clamp(16px, 4vw, 32px)',
+      gap: 12, position: 'sticky', top: 0, zIndex: 30
+    }}>
+      <button className="lumen-mobile-menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{
+        padding: 8, borderRadius: 6, color: C.text, display: 'none', alignItems: 'center'
+      }}>
+        <I.Menu size={22} />
+      </button>
+
+      <h1 className="lumen-serif" style={{
+        fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: 500, margin: 0, color: C.text, letterSpacing: '-0.01em'
+      }}>{titles[page]}</h1>
+
+      <div style={{ flex: 1 }} />
+
+      <div style={{ position: 'relative' }}>
+        <button onClick={() => setSearchOpen(!searchOpen)} style={{
+          padding: '8px 12px', borderRadius: 8, color: C.textMuted,
+          display: 'flex', alignItems: 'center', gap: 8, background: C.card,
+          border: `1px solid ${C.borderSoft}`, fontSize: 13
+        }}>
+          <I.Search size={15} />
+          <span className="lumen-search-text">Buscar...</span>
+        </button>
+        {searchOpen && (
+          <div style={{
+            position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+            width: 'min(380px, 90vw)', background: C.cardElev,
+            border: `1px solid ${C.border}`, borderRadius: 10,
+            boxShadow: `0 12px 32px rgba(0,0,0,0.12)`, padding: 12, zIndex: 100
+          }}>
+            <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+              placeholder="Buscar em todo o sistema..."
+              style={{
+                width: '100%', padding: '10px 12px', borderRadius: 6,
+                border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                fontSize: 14
+              }} />
+            <div style={{ marginTop: 8, maxHeight: 320, overflowY: 'auto' }} className="lumen-scroll">
+              {query && results.length === 0 && (
+                <div style={{ padding: 16, color: C.textSoft, fontSize: 13, textAlign: 'center' }}>
+                  Nenhum resultado.
+                </div>
+              )}
+              {results.map((r, i) => (
+                <button key={i} onClick={() => { r.action(); setSearchOpen(false); setQuery(''); }}
+                  style={{
+                    width: '100%', padding: '10px 12px', textAlign: 'left',
+                    borderRadius: 6, marginBottom: 2, color: C.text, fontSize: 13,
+                    display: 'flex', flexDirection: 'column', gap: 2,
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = C.borderSoft}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <span style={{ fontSize: 10, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                    {r.tipo}
+                  </span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')} style={{
+        padding: 9, borderRadius: 8, color: C.textMuted, background: C.card,
+        border: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center'
+      }}>
+        {theme === 'light' ? <I.Moon size={16} /> : <I.Sun size={16} />}
+      </button>
+    </header>
+  );
+}
+
+// ============= UI HELPERS =============
+const Card = ({ children, C, style = {}, onClick, hover = false, ...rest }) => (
+  <div onClick={onClick} {...rest} style={{
+    background: C.card, border: `1px solid ${C.borderSoft}`, borderRadius: 12,
+    padding: 20, transition: 'all 0.2s', cursor: onClick ? 'pointer' : 'default',
+    ...style
+  }}
+  onMouseEnter={e => { if (hover) { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 8px 20px rgba(0,0,0,0.08)`; }}}
+  onMouseLeave={e => { if (hover) { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}}>
+    {children}
+  </div>
+);
+
+const Button = ({ children, C, variant = 'primary', size = 'md', icon: IconC, ...props }) => {
+  const sizes = { sm: '7px 12px', md: '10px 16px', lg: '12px 20px' };
+  const styles = {
+    primary: { background: C.accent, color: '#fff', border: `1px solid ${C.accent}` },
+    secondary: { background: C.card, color: C.text, border: `1px solid ${C.border}` },
+    ghost: { background: 'transparent', color: C.textMuted, border: 'none' },
+    danger: { background: 'transparent', color: C.error, border: `1px solid ${C.error}30` },
+    success: { background: C.success, color: '#fff', border: `1px solid ${C.success}` },
+  };
+  const { style, ...rest } = props;
+  return (
+    <button {...rest} style={{
+      padding: sizes[size], borderRadius: 8, fontSize: size === 'sm' ? 12.5 : 13.5, fontWeight: 600,
+      display: 'inline-flex', alignItems: 'center', gap: 7, transition: 'all 0.15s',
+      ...styles[variant], ...style
+    }}
+    onMouseEnter={e => { e.currentTarget.style.opacity = '0.88'; }}
+    onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}>
+      {IconC && <IconC size={size === 'sm' ? 13 : 15} />}
+      {children}
+    </button>
+  );
+};
+
+const Badge = ({ children, C, color = 'accent' }) => {
+  const colors = {
+    accent: { bg: C.accentSoft, fg: C.accent },
+    warn: { bg: C.warn + '20', fg: C.warn },
+    error: { bg: C.error + '20', fg: C.error },
+    soft: { bg: C.borderSoft, fg: C.textMuted },
+  };
+  const c = colors[color] || colors.accent;
+  return (
+    <span style={{
+      padding: '3px 9px', borderRadius: 6, background: c.bg, color: c.fg,
+      fontSize: 11, fontWeight: 600, letterSpacing: '0.02em',
+      display: 'inline-flex', alignItems: 'center', gap: 4
+    }}>{children}</span>
+  );
+};
+
+// ============= DASHBOARD =============
+function Dashboard({ questoes, flashcards, cronograma, setCronograma, setPage, C }) {
+  const respondidas = questoes.filter(q => q.resposta);
+  const acertos = respondidas.filter(q => q.acertou).length;
+  const taxa = respondidas.length ? Math.round((acertos / respondidas.length) * 100) : 0;
+
+  const erradasPorSubtema = useMemo(() => {
+    const m = {};
+    questoes.filter(q => q.resposta && !q.acertou).forEach(q => {
+      const s = q.subtema || 'Sem subtema';
+      m[s] = m[s] || [];
+      m[s].push(q);
+    });
+    return Object.entries(m).sort((a, b) => b[1].length - a[1].length);
+  }, [questoes]);
+
+  const desempenhoPorTema = useMemo(() => {
+    const m = {};
+    respondidas.forEach(q => {
+      const t = TEMAS.find(t => t.id === q.tema);
+      const nome = t?.nome || 'Outros';
+      m[nome] = m[nome] || { total: 0, acertos: 0, cor: t?.cor || '#888' };
+      m[nome].total++;
+      if (q.acertou) m[nome].acertos++;
+    });
+    return Object.entries(m).map(([nome, d]) => ({ nome, ...d, taxa: Math.round((d.acertos / d.total) * 100) }));
+  }, [respondidas]);
+
+  const semanaAtual = cronograma?.semanas?.[0];
+  const atualizarTemaSemana = (idxDia, idxTema, concluido) => {
+    if (!semanaAtual || !setCronograma) return;
+    setCronograma({
+      semanas: (cronograma.semanas || []).map(s => s.id === semanaAtual.id ? {
+        ...s,
+        dias: (s.dias || []).map((d, i) => {
+          if (i !== idxDia) return d;
+          const temasChecklist = normalizarTemasDoDia(d).map((t, j) => j === idxTema ? { ...t, concluido } : t);
+          return { ...d, temasChecklist, concluido: temasChecklist.length > 0 && temasChecklist.every(t => t.concluido) };
+        })
+      } : s)
+    });
+  };
+  const diasComTema = (semanaAtual?.dias || []).filter(d => normalizarTemasDoDia(d).length > 0);
+  const resumoTemasSemana = resumoConclusaoTemas(semanaAtual?.dias || []);
+
+  return (
+    <div className="lumen-fade-in">
+      <div style={{
+        marginBottom: 32, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between',
+        flexWrap: 'wrap', gap: 16
+      }}>
+        <div>
+          <div style={{ fontSize: 12, color: C.textSoft, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Bem-vinda de volta
+          </div>
+          <h2 className="lumen-serif" style={{
+            fontSize: 'clamp(26px, 4vw, 38px)', fontWeight: 500, margin: 0, color: C.text,
+            letterSpacing: '-0.02em', lineHeight: 1.15
+          }}>
+            Sua jornada na <em style={{ color: C.accent, fontStyle: 'italic' }}>residência</em>,<br />
+            organizada com clareza.
+          </h2>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button C={C} icon={I.Plus} onClick={() => setPage('questoes')}>Nova questão</Button>
+          <Button C={C} variant="secondary" icon={I.Layers} onClick={() => setPage('flashcards')}>Flashcards</Button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <StatCard C={C} label="Questões resolvidas" value={respondidas.length} sub={`${questoes.length} cadastradas`} icon={I.Book} />
+        <StatCard C={C} label="Taxa de acerto" value={`${taxa}%`} sub={`${acertos} acertos`} icon={I.Target} accent />
+        <StatCard C={C} label="Flashcards" value={flashcards.length} sub={`${flashcards.filter(f => f.revisarHoje).length} para revisar`} icon={I.Layers} />
+        <StatCard C={C} label="Para revisar" value={questoes.filter(q => q.revisarDepois).length} sub="questões marcadas" icon={I.Bookmark} />
+      </div>
+
+      <div className="lumen-grid-resp" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20, marginBottom: 24 }}>
+        <Card C={C}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+            <h3 className="lumen-serif" style={{ fontSize: 18, fontWeight: 500, margin: 0, color: C.text }}>
+              Desempenho por tema
+            </h3>
+            <I.Trend size={16} />
+          </div>
+          {desempenhoPorTema.length === 0 ? (
+            <div style={{ padding: '32px 0', textAlign: 'center', color: C.textSoft, fontSize: 13 }}>
+              Resolva questões para ver o desempenho por tema.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {desempenhoPorTema.map(t => (
+                <div key={t.nome}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
+                    <span style={{ color: C.text, fontWeight: 500 }}>{t.nome}</span>
+                    <span style={{ color: C.textMuted }}>
+                      {t.acertos}/{t.total} • <strong style={{ color: t.taxa >= 70 ? C.success : t.taxa >= 50 ? C.warn : C.error }}>{t.taxa}%</strong>
+                    </span>
+                  </div>
+                  <div style={{ height: 6, background: C.borderSoft, borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${t.taxa}%`, background: t.cor, transition: 'width 0.6s' }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card C={C}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <h3 className="lumen-serif" style={{ fontSize: 18, fontWeight: 500, margin: 0, color: C.text }}>
+              Minha semana
+            </h3>
+            <button onClick={() => setPage('cronograma')} style={{ color: C.accent, fontSize: 12, fontWeight: 600 }}>
+              Abrir →
+            </button>
+          </div>
+          {semanaAtual ? (
+            <>
+              <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 10 }}>
+                {semanaAtual.inicio} → {semanaAtual.fim}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <ProgressItem C={C} label="Questões"
+                  atual={respondidas.filter(q => isThisWeek(q.dataResposta)).length}
+                  meta={semanaAtual.metaQuestoes || 50} />
+                <ProgressItem C={C} label="Flashcards"
+                  atual={flashcards.filter(f => isThisWeek(f.dataCriacao)).length}
+                  meta={semanaAtual.metaFlashcards || 20} />
+              </div>
+              <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${C.borderSoft}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontSize: 12, color: C.textSoft, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Temas da semana</div>
+                  <div style={{ fontSize: 12, color: C.textMuted }}>{resumoTemasSemana.concluidos}/{resumoTemasSemana.total || 0}</div>
+                </div>
+                {diasComTema.length === 0 ? (
+                  <div style={{ fontSize: 12, color: C.textSoft }}>Adicione temas no cronograma para eles aparecerem aqui.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(semanaAtual.dias || []).map((dia, i) => {
+                      const temasDia = normalizarTemasDoDia(dia);
+                      return temasDia.length ? (
+                        <div key={i} style={{ padding: 9, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}` }}>
+                          <div style={{ fontSize: 11, color: C.textSoft, fontWeight: 700, marginBottom: 6 }}>{dia.nome}</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {temasDia.map((tema, j) => (
+                              <label key={tema.id || j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={!!tema.concluido} onChange={e => atualizarTemaSemana(i, j, e.target.checked)} style={{ marginTop: 2 }} />
+                                <span style={{ fontSize: 12.5, color: tema.concluido ? C.textSoft : C.text, lineHeight: 1.4, textDecoration: tema.concluido ? 'line-through' : 'none' }}>{tema.titulo}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '24px 0', textAlign: 'center' }}>
+              <I.Calendar size={28} />
+              <div style={{ fontSize: 13, color: C.textSoft, marginBottom: 12, marginTop: 8 }}>Sem cronograma ativo</div>
+              <Button C={C} size="sm" onClick={() => setPage('cronograma')}>Criar semana</Button>
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card C={C}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h3 className="lumen-serif" style={{ fontSize: 18, fontWeight: 500, margin: 0, color: C.text }}>
+            Revisão focada · questões erradas por subtema
+          </h3>
+          <I.Alert size={16} />
+        </div>
+        {erradasPorSubtema.length === 0 ? (
+          <div style={{ padding: '32px 0', textAlign: 'center', color: C.textSoft, fontSize: 13 }}>
+            Nenhuma questão errada — continue assim!
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 12 }}>
+            {erradasPorSubtema.slice(0, 6).map(([subtema, qs]) => (
+              <button key={subtema} onClick={() => setPage('questoes')} style={{
+                padding: 14, borderRadius: 10, background: C.bg,
+                border: `1px solid ${C.borderSoft}`, textAlign: 'left',
+                display: 'flex', flexDirection: 'column', gap: 4
+              }}>
+                <span style={{ fontSize: 11, color: C.error, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  {qs.length} {qs.length === 1 ? 'erro' : 'erros'}
+                </span>
+                <span style={{ color: C.text, fontSize: 14, fontWeight: 500 }}>{subtema}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+const StatCard = ({ C, label, value, sub, icon: IconC, accent }) => (
+  <Card C={C} hover style={{
+    background: accent ? `linear-gradient(135deg, ${C.accent}, ${C.accentDeep})` : C.card,
+    color: accent ? '#fff' : C.text, border: accent ? 'none' : `1px solid ${C.borderSoft}`,
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+      <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase',
+        color: accent ? 'rgba(255,255,255,0.85)' : C.textSoft, fontWeight: 600 }}>{label}</span>
+      <span style={{ color: accent ? 'rgba(255,255,255,0.7)' : C.textSoft }}>
+        <IconC size={16} />
+      </span>
+    </div>
+    <div className="lumen-serif" style={{ fontSize: 32, fontWeight: 500, lineHeight: 1, marginBottom: 4 }}>{value}</div>
+    <div style={{ fontSize: 12, color: accent ? 'rgba(255,255,255,0.85)' : C.textMuted }}>{sub}</div>
+  </Card>
+);
+
+const ProgressItem = ({ C, label, atual, meta }) => {
+  const pct = Math.min(100, Math.round((atual / meta) * 100));
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+        <span style={{ color: C.text, fontWeight: 500 }}>{label}</span>
+        <span style={{ color: C.textMuted }}>{atual}/{meta}</span>
+      </div>
+      <div style={{ height: 5, background: C.borderSoft, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, background: C.accent, transition: 'width 0.5s' }} />
+      </div>
+    </div>
+  );
+};
+
+
+function normalizarTemasDoDia(dia) {
+  const linhas = String(dia?.temas || '')
+    .split(/\n|;/)
+    .map(t => t.trim())
+    .filter(Boolean);
+  const antigos = Array.isArray(dia?.temasChecklist) ? dia.temasChecklist : [];
+  return linhas.map((titulo, idx) => {
+    const antigo = antigos.find(t => t.titulo === titulo) || antigos[idx];
+    return { id: antigo?.id || ('tema-' + idx + '-' + titulo.slice(0, 18)), titulo, concluido: !!antigo?.concluido };
+  });
+}
+
+function resumoConclusaoTemas(dias = []) {
+  const todos = dias.flatMap(d => normalizarTemasDoDia(d));
+  return { total: todos.length, concluidos: todos.filter(t => t.concluido).length };
+}
+
+function isThisWeek(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = (now - d) / (1000 * 60 * 60 * 24);
+  return diff < 7;
+}
+
+// ============= QUESTÕES =============
+function Questoes({ questoes, setQuestoes, flashcards, setFlashcards, instituicoes, setInstituicoes, C, isDark }) {
+  const [view, setView] = useState('lista');
+  const [selectedId, setSelectedId] = useState(null);
+  const [filtros, setFiltros] = useState({ tema: 'todos', instituicao: 'todas', ano: 'todos', status: 'todos' });
+  const [showFiltros, setShowFiltros] = useState(false);
+
+  useEffect(() => {
+    const alvo = storage.get('lumen_open_question', null);
+    if (alvo && questoes.some(q => q.id === alvo)) {
+      setSelectedId(alvo);
+      setView('resolver');
+      localStorage.removeItem('lumen_open_question');
+    }
+  }, [questoes]);
+
+  const filtradas = useMemo(() => {
+    return questoes.filter(q => {
+      if (filtros.tema !== 'todos' && q.tema !== filtros.tema) return false;
+      if (filtros.instituicao !== 'todas' && q.instituicao !== filtros.instituicao) return false;
+      if (filtros.ano !== 'todos' && String(q.ano) !== filtros.ano) return false;
+      if (filtros.status === 'erradas' && (q.acertou !== false)) return false;
+      if (filtros.status === 'acertadas' && (q.acertou !== true)) return false;
+      if (filtros.status === 'naoFeitas' && q.resposta) return false;
+      if (filtros.status === 'revisar' && !q.revisarDepois) return false;
+      if (filtros.status === 'favoritas' && !q.favorita) return false;
+      return true;
+    });
+  }, [questoes, filtros]);
+
+  const anos = ANOS_QUESTOES;
+
+  const excluirQuestao = (id) => {
+    const alvo = questoes.find(q => q.id === id);
+    if (!alvo) return;
+    const identificacao = `#${alvo.numero || ''} ${alvo.instituicao || ''} ${alvo.ano || ''}`.trim();
+    if (!confirm(`Tem certeza que deseja excluir a questão ${identificacao}?\n\nEssa ação não pode ser desfeita.`)) return;
+    setQuestoes(questoes.filter(q => q.id !== id));
+    if (selectedId === id) {
+      setSelectedId(null);
+      setView('lista');
+    }
+  };
+
+  if (view === 'resolver' && selectedId) {
+    return <ResolverQuestao C={C} isDark={isDark}
+      questao={questoes.find(q => q.id === selectedId)}
+      lista={filtradas.some(q => q.id === selectedId) ? filtradas : questoes}
+      onUpdate={(updated) => setQuestoes(questoes.map(q => q.id === updated.id ? updated : q))}
+      onEdit={() => setView('editar')}
+      onDelete={() => excluirQuestao(selectedId)}
+      onClose={() => setView('lista')}
+      onNavigate={(id) => setSelectedId(id)}
+      flashcards={flashcards} setFlashcards={setFlashcards} />;
+  }
+
+  if (view === 'editar' && selectedId) {
+    const questaoAtual = questoes.find(q => q.id === selectedId);
+    if (!questaoAtual) {
+      setView('lista');
+      setSelectedId(null);
+      return null;
+    }
+    return <CriarQuestao C={C} instituicoes={instituicoes} setInstituicoes={setInstituicoes}
+      questaoInicial={questaoAtual}
+      modoEdicao={true}
+      onSave={(editada) => { setQuestoes(questoes.map(q => q.id === editada.id ? editada : q)); setView('resolver'); }}
+      onCancel={() => setView('resolver')} />;
+  }
+
+  if (view === 'criar') {
+    return <CriarQuestao C={C} instituicoes={instituicoes} setInstituicoes={setInstituicoes}
+      onSave={(nova) => { setQuestoes([nova, ...questoes]); setView('lista'); }}
+      onCancel={() => setView('lista')} />;
+  }
+
+  return (
+    <div className="lumen-fade-in">
+      <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+        <Button C={C} icon={I.Plus} onClick={() => setView('criar')}>Cadastrar questão</Button>
+        <Button C={C} variant="secondary" icon={I.Upload} onClick={() => alert('Importação de PDF: para extração automática, é necessário hospedar com backend e API. Por enquanto, use o cadastro manual.')}>
+          Importar PDF
+        </Button>
+        <Button C={C} variant="secondary" icon={I.Filter} onClick={() => setShowFiltros(!showFiltros)}>
+          Filtros
+        </Button>
+        <div style={{ flex: 1 }} />
+        <span style={{ fontSize: 13, color: C.textMuted, alignSelf: 'center' }}>
+          {filtradas.length} de {questoes.length}
+        </span>
+      </div>
+
+      <GerenciarListasRapidas C={C} instituicoes={instituicoes} setInstituicoes={setInstituicoes} />
+
+      {showFiltros && (
+        <Card C={C} style={{ marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+            <FilterSelect C={C} label="Tema" value={filtros.tema} onChange={v => setFiltros({...filtros, tema: v})}
+              options={[['todos', 'Todos'], ...TEMAS.map(t => [t.id, t.nome])]} />
+            <FilterSelect C={C} label="Instituição" value={filtros.instituicao} onChange={v => setFiltros({...filtros, instituicao: v})}
+              options={[['todas', 'Todas'], ...instituicoes.map(i => [i, i])]} />
+            <FilterSelect C={C} label="Ano" value={filtros.ano} onChange={v => setFiltros({...filtros, ano: v})}
+              options={[['todos', 'Todos'], ...anos.map(a => [String(a), String(a)])]} />
+            <FilterSelect C={C} label="Status" value={filtros.status} onChange={v => setFiltros({...filtros, status: v})}
+              options={[['todos', 'Todos'], ['naoFeitas', 'Não feitas'], ['acertadas', 'Acertadas'], ['erradas', 'Erradas'], ['revisar', 'Revisar depois'], ['favoritas', 'Favoritas']]} />
+          </div>
+        </Card>
+      )}
+
+      {filtradas.length === 0 ? (
+        <Card C={C} style={{ textAlign: 'center', padding: 60 }}>
+          <I.Book size={32} />
+          <div style={{ fontSize: 15, color: C.textMuted, marginBottom: 4, marginTop: 12 }}>Nenhuma questão encontrada.</div>
+          <div style={{ fontSize: 13, color: C.textSoft }}>Cadastre uma nova ou ajuste os filtros.</div>
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {filtradas.map(q => {
+            const tema = TEMAS.find(t => t.id === q.tema);
+            return (
+              <Card key={q.id} C={C} hover onClick={() => { setSelectedId(q.id); setView('resolver'); }}
+                style={{ padding: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                  <div style={{
+                    width: 4, alignSelf: 'stretch', borderRadius: 2, background: tema?.cor || C.border, minHeight: 40
+                  }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                      <Badge C={C} color="soft">#{q.numero}</Badge>
+                      <Badge C={C} color="soft">{q.instituicao} • {q.ano}</Badge>
+                      {tema && <Badge C={C}>{tema.nome}</Badge>}
+                      {q.favorita && <Badge C={C} color="warn"><I.Star filled size={10} /> Favorita</Badge>}
+                      {q.revisarDepois && <Badge C={C} color="warn"><I.Flag size={10} /> Revisar</Badge>}
+                      {q.acertou === true && <Badge C={C}>✓ Acertou</Badge>}
+                      {q.acertou === false && <Badge C={C} color="error">✕ Errou</Badge>}
+                    </div>
+                    <div style={{ fontSize: 13.5, color: C.text, lineHeight: 1.55,
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                    }}>
+                      {q.enunciado}
+                    </div>
+                    <div style={{ fontSize: 12, color: C.textSoft, marginTop: 6 }}>{q.subtema}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                    <button title="Editar questão" onClick={() => { setSelectedId(q.id); setView('editar'); }} style={{
+                      padding: 8, borderRadius: 6, color: C.textMuted,
+                      background: C.bg, border: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center'
+                    }}>
+                      <I.Edit size={15} />
+                    </button>
+                    <button title="Excluir questão" onClick={() => excluirQuestao(q.id)} style={{
+                      padding: 8, borderRadius: 6, color: C.error,
+                      background: C.bg, border: `1px solid ${C.error}30`, display: 'flex', alignItems: 'center'
+                    }}>
+                      <I.Trash size={15} />
+                    </button>
+                    <I.ChevR size={18} />
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FilterSelect = ({ C, label, value, onChange, options }) => (
+  <div>
+    <div style={{ fontSize: 11, color: C.textSoft, marginBottom: 4, fontWeight: 600,
+      letterSpacing: '0.05em', textTransform: 'uppercase' }}>{label}</div>
+    <select value={value} onChange={e => onChange(e.target.value)} style={{
+      width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${C.border}`,
+      background: C.bg, color: C.text, fontSize: 13
+    }}>
+      {options.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+    </select>
+  </div>
+);
+
+
+function GerenciarListasRapidas({ C, instituicoes, setInstituicoes }) {
+  const [aberto, setAberto] = useState(false);
+  const [novaEsp, setNovaEsp] = useState('');
+  const [novaInst, setNovaInst] = useState('');
+  const [novoTemaNome, setNovoTemaNome] = useState('');
+  const [novoAnoValor, setNovoAnoValor] = useState('');
+  const [novoAno, setNovoAno] = useState('');
+  const addInst = () => {
+    const nome = novaInst.trim();
+    if (!nome) return;
+    if (!instituicoes.includes(nome)) setInstituicoes([...instituicoes, nome]);
+    setNovaInst('');
+  };
+  return <Card C={C} style={{ marginBottom: 16, padding: aberto ? 16 : 10 }}>
+    <button onClick={() => setAberto(!aberto)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: C.text, fontWeight: 700 }}>
+      <span>Adicionar tema/especialidade, instituição ou ano</span>
+      {aberto ? <I.ChevU size={16} /> : <I.ChevD size={16} />}
+    </button>
+    {aberto && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, marginTop: 14 }}>
+      <div><FormLabel C={C}>Novo tema/especialidade</FormLabel><div style={{ display: 'flex', gap: 6 }}><input value={novaEsp} onChange={e => setNovaEsp(e.target.value)} placeholder="Ex.: Hematologia" style={{ ...inputStyle(C), padding: '8px 10px' }} /><Button C={C} size="sm" onClick={() => salvarEspecialidadeGlobal(novaEsp)}>Adicionar</Button></div><div style={{ fontSize: 11, color: C.textSoft, marginTop: 5 }}>Será aplicado em questões, flashcards, biblioteca, medicamentos e fluxogramas.</div></div>
+      <div><FormLabel C={C}>Nova instituição</FormLabel><div style={{ display: 'flex', gap: 6 }}><input value={novaInst} onChange={e => setNovaInst(e.target.value)} placeholder="Ex.: UNIFESP" style={{ ...inputStyle(C), padding: '8px 10px' }} /><Button C={C} size="sm" onClick={addInst}>Adicionar</Button></div></div>
+      <div><FormLabel C={C}>Novo ano</FormLabel><div style={{ display: 'flex', gap: 6 }}><input value={novoAno} onChange={e => setNovoAno(e.target.value)} placeholder="Ex.: 2028" type="number" style={{ ...inputStyle(C), padding: '8px 10px' }} /><Button C={C} size="sm" onClick={() => salvarAnoGlobal(novoAno)}>Adicionar</Button></div><div style={{ fontSize: 11, color: C.textSoft, marginTop: 5 }}>2019–2027 já ficam disponíveis por padrão.</div></div>
+    </div>}
+  </Card>;
+}
+
+// ============= RESOLVER QUESTÃO =============
+function ResolverQuestao({ C, isDark, questao, lista, onUpdate, onEdit, onDelete, onClose, onNavigate, flashcards, setFlashcards }) {
+  const [escolha, setEscolha] = useState(questao.resposta || null);
+  const [confirmada, setConfirmada] = useState(!!questao.resposta);
+  const [activeTab, setActiveTab] = useState('detalhado');
+  const [editandoComentario, setEditandoComentario] = useState(false);
+  const [comentarioEdit, setComentarioEdit] = useState(questao.comentarioDetalhado || '');
+  const [criandoFlashcard, setCriandoFlashcard] = useState(false);
+  const [novoFlash, setNovoFlash] = useState({ frente: '', verso: '' });
+
+  useEffect(() => {
+    setEscolha(questao.resposta || null);
+    setConfirmada(!!questao.resposta);
+    setComentarioEdit(questao.comentarioDetalhado || '');
+    setActiveTab('detalhado');
+  }, [questao.id]);
+
+  const idx = lista.findIndex(q => q.id === questao.id);
+  const tema = TEMAS.find(t => t.id === questao.tema);
+
+  const confirmar = () => {
+    if (!escolha) return;
+    const acertou = escolha === questao.gabarito;
+    onUpdate({ ...questao, resposta: escolha, acertou, dataResposta: new Date().toISOString() });
+    setConfirmada(true);
+  };
+
+  const setChecklist = (idx, valor) => {
+    onUpdate({ ...questao, checklistRespostas: { ...questao.checklistRespostas, [idx]: valor } });
+  };
+
+  const toggleFav = () => onUpdate({ ...questao, favorita: !questao.favorita });
+  const toggleRevisar = () => onUpdate({ ...questao, revisarDepois: !questao.revisarDepois });
+
+  const flashcardsRelacionados = flashcards.filter(f => f.questaoId === questao.id);
+
+  const criarFlashcard = () => {
+    if (!novoFlash.frente.trim()) return;
+    setFlashcards([{
+      id: 'f-' + Date.now(),
+      frente: novoFlash.frente, verso: novoFlash.verso,
+      tema: questao.tema, subtema: questao.subtema,
+      questaoId: questao.id, tags: questao.tags || [],
+      dificuldade: 'media', dataCriacao: new Date().toISOString(),
+      proximaRevisao: new Date().toISOString(), intervaloDias: 0,
+      revisarHoje: true, historico: []
+    }, ...flashcards]);
+    setNovoFlash({ frente: '', verso: '' });
+    setCriandoFlashcard(false);
+  };
+
+  return (
+    <div className="lumen-fade-in">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
+        <Button C={C} variant="ghost" size="sm" icon={I.ArrowL} onClick={onClose}>Lista</Button>
+        <Button C={C} variant="secondary" size="sm" icon={I.Edit} onClick={onEdit}>Editar questão</Button>
+        <Button C={C} variant="danger" size="sm" icon={I.Trash} onClick={onDelete}>Excluir</Button>
+        <div style={{ flex: 1 }} />
+        <button disabled={idx <= 0} onClick={() => onNavigate(lista[idx - 1].id)} style={{
+          padding: 8, borderRadius: 6, color: idx <= 0 ? C.textSoft : C.textMuted,
+          background: C.card, border: `1px solid ${C.borderSoft}`, opacity: idx <= 0 ? 0.5 : 1,
+          display: 'flex', alignItems: 'center'
+        }}>
+          <I.ChevL size={16} />
+        </button>
+        <span style={{ fontSize: 13, color: C.textMuted, fontWeight: 600 }}>
+          {idx + 1} de {lista.length}
+        </span>
+        <button disabled={idx >= lista.length - 1} onClick={() => onNavigate(lista[idx + 1].id)} style={{
+          padding: 8, borderRadius: 6, color: idx >= lista.length - 1 ? C.textSoft : C.textMuted,
+          background: C.card, border: `1px solid ${C.borderSoft}`, opacity: idx >= lista.length - 1 ? 0.5 : 1,
+          display: 'flex', alignItems: 'center'
+        }}>
+          <I.ChevR size={16} />
+        </button>
+        <button onClick={toggleFav} style={{
+          padding: 8, borderRadius: 6, color: questao.favorita ? C.warn : C.textMuted,
+          background: C.card, border: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center'
+        }}>
+          <I.Star filled={questao.favorita} size={16} />
+        </button>
+        <button onClick={toggleRevisar} style={{
+          padding: 8, borderRadius: 6, color: questao.revisarDepois ? C.warn : C.textMuted,
+          background: C.card, border: `1px solid ${C.borderSoft}`, display: 'flex', alignItems: 'center'
+        }}>
+          <I.Flag filled={questao.revisarDepois} size={16} />
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        <Badge C={C} color="soft">{questao.instituicao} · {questao.ano}</Badge>
+        {tema && <Badge C={C}>{tema.nome}</Badge>}
+        <Badge C={C} color="soft">{questao.subtema}</Badge>
+        {questao.tags?.map(t => <Badge key={t} C={C} color="soft">#{t}</Badge>)}
+      </div>
+
+      <Card C={C} style={{ marginBottom: 16, padding: 'clamp(20px, 4vw, 32px)' }}>
+        <div className="lumen-serif" style={{
+          fontSize: 'clamp(14.5px, 1.5vw, 16px)', lineHeight: 1.75, color: C.text, fontWeight: 400,
+        }}>
+          {questao.enunciado}
+        </div>
+      </Card>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+        {(questao.alternativas || []).filter(a => (a.texto || '').trim()).map(alt => {
+          const isEscolha = escolha === alt.letra;
+          const isCorreta = confirmada && alt.letra === questao.gabarito;
+          const isErradaEscolhida = confirmada && isEscolha && alt.letra !== questao.gabarito;
+          let bg = C.card, border = C.borderSoft, indicator = null;
+
+          if (confirmada) {
+            if (isCorreta) { bg = isDark ? '#2c4a36' : '#e0ebd9'; border = C.success; indicator = <I.Check size={18} />; }
+            else if (isErradaEscolhida) { bg = isDark ? '#4a2c2c' : '#f3dcd9'; border = C.error; indicator = <I.X size={18} />; }
+          } else if (isEscolha) {
+            bg = C.accentSoft; border = C.accent;
+          }
+
+          return (
+            <button key={alt.letra} disabled={confirmada}
+              onClick={() => !confirmada && setEscolha(alt.letra)}
+              style={{
+                padding: '14px 16px', borderRadius: 10, background: bg,
+                border: `1.5px solid ${border}`, textAlign: 'left',
+                color: C.text, cursor: confirmada ? 'default' : 'pointer',
+                display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.15s',
+                fontSize: 14.5, lineHeight: 1.5
+              }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: isCorreta ? C.success : isErradaEscolhida ? C.error : isEscolha ? C.accent : C.borderSoft,
+                color: (isCorreta || isErradaEscolhida || isEscolha) ? '#fff' : C.text,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 700, fontSize: 14, flexShrink: 0
+              }}>{alt.letra}</div>
+              <span style={{ flex: 1 }}>{alt.texto}</span>
+              <span style={{ color: isCorreta ? C.success : C.error }}>{indicator}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {!confirmada && (
+        <Button C={C} disabled={!escolha} onClick={confirmar} size="lg"
+          style={{ opacity: escolha ? 1 : 0.5, marginBottom: 20 }}>
+          Confirmar resposta
+        </Button>
+      )}
+
+      {confirmada && (
+        <div className="lumen-fade-in">
+          <div style={{
+            padding: '14px 18px', borderRadius: 10, marginBottom: 16,
+            background: questao.acertou ? (isDark ? '#2c4a36' : '#e0ebd9') : (isDark ? '#4a2c2c' : '#f3dcd9'),
+            border: `1px solid ${questao.acertou ? C.success : C.error}`,
+            display: 'flex', alignItems: 'flex-start', gap: 12
+          }}>
+            <span style={{ color: questao.acertou ? C.success : C.error }}>
+              {questao.acertou ? <I.Check size={20} /> : <I.X size={20} />}
+            </span>
+            <div>
+              <div style={{ fontWeight: 700, color: questao.acertou ? C.success : C.error, marginBottom: 4 }}>
+                {questao.acertou ? 'Correto!' : 'Incorreto'}
+              </div>
+              <div style={{ fontSize: 14, color: C.text, lineHeight: 1.55 }}>
+                {questao.comentarioBreve}
+              </div>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex', gap: 4, marginBottom: 12, overflowX: 'auto',
+            borderBottom: `1px solid ${C.borderSoft}`,
+          }} className="lumen-scroll">
+            {[
+              { id: 'detalhado', label: 'Comentário detalhado' },
+              { id: 'dica', label: 'Dica de prova' },
+              { id: 'checklist', label: 'Checklist essencial' },
+              { id: 'alternativas', label: 'Comentários por alternativa' },
+              { id: 'flashcards', label: `Flashcards (${flashcardsRelacionados.length})` },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                padding: '10px 14px', fontSize: 13, fontWeight: 600,
+                color: activeTab === tab.id ? C.accent : C.textMuted,
+                borderBottom: `2px solid ${activeTab === tab.id ? C.accent : 'transparent'}`,
+                whiteSpace: 'nowrap'
+              }}>{tab.label}</button>
+            ))}
+          </div>
+
+          <Card C={C} style={{ marginBottom: 16 }}>
+            {activeTab === 'detalhado' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <h4 style={{ margin: 0, fontSize: 15, color: C.text, fontWeight: 600 }}>Análise aprofundada</h4>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <Button C={C} variant="ghost" size="sm" icon={I.Sparkles}
+                      onClick={() => alert('IA: para gerar comentários automaticamente é necessário conectar à API. Hospede o site para ativar este recurso.')}>
+                      Gerar com IA
+                    </Button>
+                    <Button C={C} variant="secondary" size="sm" icon={I.Edit}
+                      onClick={() => setEditandoComentario(!editandoComentario)}>
+                      {editandoComentario ? 'Cancelar' : 'Editar'}
+                    </Button>
+                  </div>
+                </div>
+                {editandoComentario ? (
+                  <>
+                    <textarea value={comentarioEdit} onChange={e => setComentarioEdit(e.target.value)}
+                      style={{ width: '100%', minHeight: 180, padding: 12, borderRadius: 8,
+                        border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+                        fontSize: 14, lineHeight: 1.6, resize: 'vertical' }} />
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                      <Button C={C} size="sm" icon={I.Save} onClick={() => {
+                        onUpdate({ ...questao, comentarioDetalhado: comentarioEdit });
+                        setEditandoComentario(false);
+                      }}>Salvar</Button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: C.text }}>
+                    {questao.comentarioDetalhado || <span style={{ color: C.textSoft }}>Nenhum comentário detalhado. Clique em Editar para adicionar.</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'dica' && (
+              <div>
+                <h4 style={{ margin: '0 0 12px', fontSize: 15, color: C.text, fontWeight: 600 }}>Dica de prova</h4>
+                <div style={{
+                  padding: 16, borderRadius: 10, background: C.bg,
+                  border: `1px solid ${C.borderSoft}`, fontSize: 14,
+                  lineHeight: 1.7, color: C.text
+                }}>
+                  {questao.dicaProva || <span style={{ color: C.textSoft }}>Nenhuma dica de prova cadastrada. Clique em “Editar questão” para adicionar.</span>}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'alternativas' && (
+              <div>
+                <h4 style={{ margin: '0 0 12px', fontSize: 15, color: C.text, fontWeight: 600 }}>Comentários por alternativa</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(questao.alternativas || []).filter(a => (a.texto || '').trim()).map(alt => (
+                    <div key={alt.letra} style={{ padding: 12, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}` }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                        <Badge C={C} color={alt.letra === questao.gabarito ? 'accent' : 'soft'}>{alt.letra}</Badge>
+                        <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>
+                          {alt.letra === questao.gabarito ? 'Gabarito' : 'Distrator'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5, marginBottom: 6 }}>{alt.texto}</div>
+                      <div style={{ fontSize: 13.5, color: C.text, lineHeight: 1.6 }}>
+                        {alt.comentario || <span style={{ color: C.textSoft }}>Sem comentário cadastrado para esta alternativa.</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'checklist' && (
+              <div>
+                <h4 style={{ margin: '0 0 6px', fontSize: 15, color: C.text, fontWeight: 600 }}>Pontos essenciais</h4>
+                <p style={{ fontSize: 12, color: C.textMuted, margin: '0 0 18px' }}>
+                  Para cada ponto: você sabia, estava na incerteza, foi desatenção ou não sabia.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {(questao.checklist || []).map((item, i) => (
+                    <div key={i}>
+                      <div style={{ fontSize: 14, color: C.text, lineHeight: 1.5, marginBottom: 8 }}>{item}</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {[
+                          { v: 'sim', label: 'Sim', cor: C.success },
+                          { v: 'incerteza', label: 'Incerteza', cor: C.warn },
+                          { v: 'desatencao', label: 'Desatenção', cor: '#7c6f9a' },
+                          { v: 'nao', label: 'Não', cor: C.error },
+                        ].map(opt => {
+                          const sel = questao.checklistRespostas?.[i] === opt.v;
+                          return (
+                            <button key={opt.v} onClick={() => setChecklist(i, opt.v)} style={{
+                              padding: '5px 12px', borderRadius: 6, fontSize: 12.5, fontWeight: 600,
+                              background: sel ? opt.cor : 'transparent',
+                              color: sel ? '#fff' : opt.cor,
+                              border: `1.5px solid ${sel ? opt.cor : opt.cor + '50'}`
+                            }}>{opt.label}</button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'flashcards' && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
+                  <h4 style={{ margin: 0, fontSize: 15, color: C.text, fontWeight: 600 }}>
+                    Flashcards desta questão
+                  </h4>
+                  <Button C={C} size="sm" icon={I.Plus} onClick={() => setCriandoFlashcard(!criandoFlashcard)}>
+                    Criar flashcard
+                  </Button>
+                </div>
+
+                {criandoFlashcard && (
+                  <div style={{ background: C.bg, padding: 16, borderRadius: 10, marginBottom: 12, border: `1px solid ${C.borderSoft}` }}>
+                    <input value={novoFlash.frente} onChange={e => setNovoFlash({...novoFlash, frente: e.target.value})}
+                      placeholder="Frente (pergunta/conceito)..."
+                      style={{ width: '100%', padding: 10, borderRadius: 6,
+                        border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 14, marginBottom: 8 }} />
+                    <textarea value={novoFlash.verso} onChange={e => setNovoFlash({...novoFlash, verso: e.target.value})}
+                      placeholder="Verso (resposta/explicação)..."
+                      style={{ width: '100%', padding: 10, borderRadius: 6, minHeight: 90,
+                        border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 14, resize: 'vertical' }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                      <Button C={C} size="sm" onClick={criarFlashcard}>Criar</Button>
+                      <Button C={C} size="sm" variant="ghost" onClick={() => setCriandoFlashcard(false)}>Cancelar</Button>
+                    </div>
+                  </div>
+                )}
+
+                {flashcardsRelacionados.length === 0 && !criandoFlashcard ? (
+                  <div style={{ padding: 28, textAlign: 'center', color: C.textSoft, fontSize: 13 }}>
+                    Nenhum flashcard criado. Clique em "Criar flashcard" para começar.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {flashcardsRelacionados.map(f => (
+                      <div key={f.id} style={{
+                        padding: 14, background: C.bg, borderRadius: 8, border: `1px solid ${C.borderSoft}`
+                      }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: C.text, marginBottom: 6 }}>{f.frente}</div>
+                        <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.55 }}>{f.verso}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============= CRIAR QUESTÃO =============
+function CriarQuestao({ C, instituicoes, setInstituicoes, onSave, onCancel, questaoInicial = null, modoEdicao = false }) {
+  const criarEstadoInicial = () => {
+    const base = questaoInicial ? { ...questaoInicial } : {
+      numero: '', instituicao: instituicoes[0], ano: new Date().getFullYear(),
+      tema: 'cardio', subtema: '', enunciado: '', gabarito: 'A',
+      alternativas: [], comentarioBreve: '', comentarioDetalhado: '', dicaProva: '',
+      checklist: ['', '', '', ''], tags: [], dificuldade: 'media', fonte: ''
+    };
+    const alternativasBase = ['A','B','C','D','E'].map(letra => {
+      const existente = (base.alternativas || []).find(a => a.letra === letra);
+      return existente || { letra, texto: '', comentario: '' };
+    });
+    const checklistBase = [...(base.checklist || []), '', '', '', ''].slice(0, 4);
+    return { ...base, alternativas: alternativasBase, checklist: checklistBase };
+  };
+  const [q, setQ] = useState(criarEstadoInicial);
+  const [novaInst, setNovaInst] = useState('');
+  const [novoTemaNome, setNovoTemaNome] = useState('');
+  const [novoAnoValor, setNovoAnoValor] = useState('');
+
+  const salvar = () => {
+    const alternativasValidas = q.alternativas.filter(a => a.texto.trim());
+    const gabaritoTemTexto = alternativasValidas.some(a => a.letra === q.gabarito);
+    if (!q.enunciado.trim() || alternativasValidas.length < 2 || !gabaritoTemTexto) {
+      alert('Preencha o enunciado, pelo menos duas alternativas e marque como gabarito uma alternativa preenchida.');
+      return;
+    }
+    const dadosSalvos = {
+      ...q,
+      id: modoEdicao ? q.id : 'q-' + Date.now(),
+      alternativas: alternativasValidas,
+      checklist: q.checklist.filter(c => c.trim()),
+    };
+    onSave(modoEdicao ? dadosSalvos : {
+      ...dadosSalvos,
+      resposta: null, acertou: null, checklistRespostas: {},
+      revisarDepois: false, favorita: false, dataResposta: null
+    });
+  };
+
+  const setAlt = (i, campo, valor) => {
+    const novo = [...q.alternativas]; novo[i] = { ...novo[i], [campo]: valor }; setQ({...q, alternativas: novo});
+  };
+
+  const addInst = () => {
+    if (novaInst.trim()) {
+      setInstituicoes([...instituicoes, novaInst.trim()]);
+      setQ({...q, instituicao: novaInst.trim()});
+      setNovaInst('');
+    }
+  };
+  const addTema = () => {
+    if (novoTemaNome.trim()) salvarEspecialidadeGlobal(novoTemaNome.trim());
+  };
+  const addAno = () => {
+    if (novoAnoValor) salvarAnoGlobal(novoAnoValor);
+  };
+
+  return (
+    <div className="lumen-fade-in">
+      <Button C={C} variant="ghost" size="sm" icon={I.ArrowL} onClick={onCancel} style={{ marginBottom: 16 }}>
+        Voltar
+      </Button>
+      <h2 className="lumen-serif" style={{ fontSize: 26, margin: '0 0 20px', color: C.text }}>
+        {modoEdicao ? 'Editar questão' : 'Cadastrar nova questão'}
+      </h2>
+
+      <Card C={C} style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 14px', fontSize: 15, color: C.text }}>Identificação</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+          <FormInput C={C} label="Número" value={q.numero} onChange={v => setQ({...q, numero: v})} />
+          <div>
+            <FormLabel C={C}>Instituição</FormLabel>
+            <select value={q.instituicao} onChange={e => setQ({...q, instituicao: e.target.value})} style={inputStyle(C)}>
+              {instituicoes.map(i => <option key={i}>{i}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <input value={novaInst} onChange={e => setNovaInst(e.target.value)} placeholder="Nova..."
+                style={{ ...inputStyle(C), padding: '6px 10px', fontSize: 12 }} />
+              <button onClick={addInst} style={{ padding: '6px 10px', borderRadius: 6,
+                background: C.accent, color: '#fff', fontSize: 12, fontWeight: 600 }}>+</button>
+            </div>
+          </div>
+          <div>
+            <FormLabel C={C}>Ano</FormLabel>
+            <select value={q.ano} onChange={e => setQ({...q, ano: parseInt(e.target.value)})} style={inputStyle(C)}>
+              {ANOS_QUESTOES.map(a => <option key={a} value={a}>{a}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <input value={novoAnoValor} onChange={e => setNovoAnoValor(e.target.value)} placeholder="Novo ano" type="number" style={{ ...inputStyle(C), padding: '6px 10px', fontSize: 12 }} />
+              <button onClick={addAno} style={{ padding: '6px 10px', borderRadius: 6, background: C.accent, color: '#fff', fontSize: 12, fontWeight: 600 }}>+</button>
+            </div>
+          </div>
+          <div>
+            <FormLabel C={C}>Especialidade/Tema</FormLabel>
+            <select value={q.tema} onChange={e => setQ({...q, tema: e.target.value})} style={inputStyle(C)}>
+              {ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+            </select>
+            <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+              <input value={novoTemaNome} onChange={e => setNovoTemaNome(e.target.value)} placeholder="Novo tema" style={{ ...inputStyle(C), padding: '6px 10px', fontSize: 12 }} />
+              <button onClick={addTema} style={{ padding: '6px 10px', borderRadius: 6, background: C.accent, color: '#fff', fontSize: 12, fontWeight: 600 }}>+</button>
+            </div>
+          </div>
+          <FormInput C={C} label="Subtema" value={q.subtema} onChange={v => setQ({...q, subtema: v})} />
+          <div>
+            <FormLabel C={C}>Dificuldade</FormLabel>
+            <select value={q.dificuldade} onChange={e => setQ({...q, dificuldade: e.target.value})} style={inputStyle(C)}>
+              <option value="facil">Fácil</option><option value="media">Média</option><option value="dificil">Difícil</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      <Card C={C} style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 14px', fontSize: 15, color: C.text }}>Enunciado e alternativas A–E</h3>
+        <FormLabel C={C}>Enunciado</FormLabel>
+        <textarea value={q.enunciado} onChange={e => setQ({...q, enunciado: e.target.value})}
+          style={{ ...inputStyle(C), minHeight: 140, fontFamily: 'Fraunces, serif', fontSize: 14, lineHeight: 1.65 }} />
+
+        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {q.alternativas.map((alt, i) => (
+            <div key={alt.letra} style={{ display: 'grid', gridTemplateColumns: '36px minmax(0, 1fr)', gap: 8, alignItems: 'start' }}>
+              <button onClick={() => setQ({...q, gabarito: alt.letra})} style={{
+                width: 36, height: 36, borderRadius: 6, flexShrink: 0,
+                background: q.gabarito === alt.letra ? C.success : C.borderSoft,
+                color: q.gabarito === alt.letra ? '#fff' : C.text,
+                fontWeight: 700, fontSize: 14
+              }}>{alt.letra}</button>
+              <div>
+                <textarea value={alt.texto} onChange={e => setAlt(i, 'texto', e.target.value)}
+                  placeholder={`Alternativa ${alt.letra} — deixe em branco se a prova tiver apenas A-D`}
+                  style={{ ...inputStyle(C), minHeight: 38, padding: '9px 12px', fontSize: 13.5 }} />
+                <textarea value={alt.comentario || ''} onChange={e => setAlt(i, 'comentario', e.target.value)}
+                  placeholder={`Comentário da alternativa ${alt.letra} — por que está correta/incorreta`}
+                  style={{ ...inputStyle(C), minHeight: 54, marginTop: 6, padding: '8px 12px', fontSize: 12.5 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 12, color: C.textSoft, margin: '10px 0 0' }}>
+          Clique na letra para marcar como gabarito. Selecionado: <strong style={{ color: C.success }}>{q.gabarito}</strong>
+        </p>
+      </Card>
+
+      <Card C={C} style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 14px', fontSize: 15, color: C.text }}>Comentários gerais</h3>
+        <FormLabel C={C}>Comentário breve após confirmar resposta</FormLabel>
+        <textarea value={q.comentarioBreve} onChange={e => setQ({...q, comentarioBreve: e.target.value})}
+          style={{ ...inputStyle(C), minHeight: 70 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Comentário detalhado</FormLabel>
+        <textarea value={q.comentarioDetalhado} onChange={e => setQ({...q, comentarioDetalhado: e.target.value})}
+          style={{ ...inputStyle(C), minHeight: 120 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Dica de prova</FormLabel>
+        <textarea value={q.dicaProva || ''} onChange={e => setQ({...q, dicaProva: e.target.value})}
+          placeholder="Macete, pegadinha ou ponto que costuma cair na prova"
+          style={{ ...inputStyle(C), minHeight: 70 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Checklist (3-4 pontos essenciais)</FormLabel>
+        {q.checklist.map((c, i) => (
+          <input key={i} value={c} onChange={e => {
+            const novo = [...q.checklist]; novo[i] = e.target.value; setQ({...q, checklist: novo});
+          }} placeholder={`Ponto ${i + 1}...`} style={{ ...inputStyle(C), marginBottom: 6 }} />
+        ))}
+      </Card>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <Button C={C} size="lg" icon={I.Save} onClick={salvar}>{modoEdicao ? 'Salvar alterações' : 'Salvar questão'}</Button>
+        <Button C={C} variant="secondary" size="lg" onClick={onCancel}>Cancelar</Button>
+      </div>
+    </div>
+  );
+}
+
+const FormLabel = ({ C, children, style = {} }) => (
+  <div style={{ fontSize: 11, fontWeight: 700, color: C.textSoft, marginBottom: 5,
+    letterSpacing: '0.06em', textTransform: 'uppercase', ...style }}>{children}</div>
+);
+const FormInput = ({ C, label, value, onChange, type = 'text' }) => (
+  <div>
+    <FormLabel C={C}>{label}</FormLabel>
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} style={inputStyle(C)} />
+  </div>
+);
+const inputStyle = (C) => ({
+  width: '100%', padding: '9px 12px', borderRadius: 6,
+  border: `1px solid ${C.border}`, background: C.bg, color: C.text,
+  fontSize: 14, resize: 'vertical', fontFamily: 'inherit'
+});
+
+// ============= SIMULADO =============
+function Simulado({ questoes, setQuestoes, instituicoes, C, isDark }) {
+  const [config, setConfig] = useState({ qtd: 10, temas: [], instituicoes: [], anos: [], minutos: 30 });
+  const [emAndamento, setEmAndamento] = useState(false);
+  const [questoesSimulado, setQuestoesSimulado] = useState([]);
+  const [respostas, setRespostas] = useState({});
+  const [tempo, setTempo] = useState(0);
+  const [finalizado, setFinalizado] = useState(false);
+  const [idx, setIdx] = useState(0);
+  const instituicoesDisp = [...new Set([...(instituicoes || []), ...questoes.map(q => q.instituicao).filter(Boolean)])].sort();
+
+  useEffect(() => {
+    if (!emAndamento || finalizado) return;
+    const t = setInterval(() => setTempo(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [emAndamento, finalizado]);
+
+  const toggle = (campo, valor) => {
+    const arr = config[campo] || [];
+    setConfig({...config, [campo]: arr.includes(valor) ? arr.filter(x => x !== valor) : [...arr, valor]});
+  };
+
+  const iniciar = () => {
+    const pool = questoes.filter(q => {
+      if (config.temas.length && !config.temas.includes(q.tema)) return false;
+      if (config.instituicoes.length && !config.instituicoes.includes(q.instituicao)) return false;
+      if (config.anos.length && !config.anos.includes(Number(q.ano))) return false;
+      return true;
+    });
+    if (pool.length === 0) { alert('Nenhuma questão disponível com esses filtros.'); return; }
+    const sel = [...pool].sort(() => Math.random() - 0.5).slice(0, config.qtd);
+    setQuestoesSimulado(sel); setEmAndamento(true); setTempo(0); setIdx(0); setFinalizado(false); setRespostas({});
+  };
+
+  const finalizar = () => {
+    setFinalizado(true);
+    const novas = [...questoes];
+    questoesSimulado.forEach(q => {
+      if (respostas[q.id]) {
+        const i = novas.findIndex(x => x.id === q.id);
+        if (i >= 0) novas[i] = { ...novas[i], resposta: respostas[q.id], acertou: respostas[q.id] === q.gabarito, dataResposta: new Date().toISOString() };
+      }
+    });
+    setQuestoes(novas);
+  };
+
+  const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+  if (finalizado) {
+    const acertos = questoesSimulado.filter(q => respostas[q.id] === q.gabarito).length;
+    return <div className="lumen-fade-in"><Card C={C} style={{ textAlign: 'center', padding: 40 }}>
+      <span style={{ color: C.accent }}><I.Award size={40} /></span>
+      <h2 className="lumen-serif" style={{ fontSize: 30, margin: '14px 0 8px', color: C.text }}>Simulado finalizado</h2>
+      <p style={{ fontSize: 14, color: C.textMuted, margin: '0 0 24px' }}>Tempo: {fmt(tempo)}</p>
+      <div style={{ fontSize: 60, fontFamily: 'Fraunces, serif', fontWeight: 600, color: C.accent, lineHeight: 1 }}>{Math.round((acertos / questoesSimulado.length) * 100)}%</div>
+      <div style={{ fontSize: 15, color: C.textMuted, marginTop: 8, marginBottom: 24 }}>{acertos} de {questoesSimulado.length} questões corretas</div>
+      <Button C={C} onClick={() => { setEmAndamento(false); setFinalizado(false); setQuestoesSimulado([]); }}>Novo simulado</Button>
+    </Card></div>;
+  }
+
+  if (emAndamento) {
+    const q = questoesSimulado[idx];
+    return <div className="lumen-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, padding: '14px 18px', background: C.card, borderRadius: 10, border: `1px solid ${C.borderSoft}`, gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}><span style={{ color: C.accent }}><I.Clock size={18} /></span><span className="lumen-serif" style={{ fontSize: 22, fontWeight: 600, color: C.text }}>{fmt(tempo)}</span></div>
+        <span style={{ fontSize: 14, color: C.textMuted, fontWeight: 600 }}>{idx + 1} / {questoesSimulado.length}</span>
+        <Button C={C} variant="danger" size="sm" onClick={finalizar}>Finalizar</Button>
+      </div>
+      <Card C={C} style={{ marginBottom: 16 }}>
+        <Badge C={C} color="soft">{q.instituicao} · {q.ano}</Badge>
+        <div className="lumen-serif" style={{ fontSize: 15, lineHeight: 1.7, color: C.text, marginTop: 10 }}>{q.enunciado}</div>
+      </Card>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {(q.alternativas || []).filter(a => (a.texto || '').trim()).map(alt => {
+          const sel = respostas[q.id] === alt.letra;
+          return <button key={alt.letra} onClick={() => setRespostas({...respostas, [q.id]: alt.letra})} style={{ padding: '12px 14px', borderRadius: 8, textAlign: 'left', background: sel ? C.accentSoft : C.card, border: `1.5px solid ${sel ? C.accent : C.borderSoft}`, display: 'flex', gap: 12, alignItems: 'center', color: C.text, fontSize: 14 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: sel ? C.accent : C.borderSoft, color: sel ? '#fff' : C.text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{alt.letra}</div>{alt.texto}
+          </button>;
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 10 }}><Button C={C} variant="secondary" disabled={idx === 0} onClick={() => setIdx(idx - 1)} icon={I.ChevL}>Anterior</Button><Button C={C} disabled={idx === questoesSimulado.length - 1} onClick={() => setIdx(idx + 1)}>Próxima <I.ChevR size={15} /></Button></div>
+    </div>;
+  }
+
+  return <div className="lumen-fade-in"><Card C={C}>
+    <h2 className="lumen-serif" style={{ fontSize: 22, margin: '0 0 6px', color: C.text }}>Configurar simulado</h2>
+    <p style={{ color: C.textMuted, fontSize: 14, margin: '0 0 24px' }}>Selecione quantidade, tempo, especialidades, instituições e anos preferidos.</p>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, marginBottom: 20 }}>
+      <FormInput C={C} label="Quantidade de questões" type="number" value={config.qtd} onChange={v => setConfig({...config, qtd: parseInt(v) || 1})} />
+      <FormInput C={C} label="Tempo (minutos)" type="number" value={config.minutos} onChange={v => setConfig({...config, minutos: parseInt(v) || 1})} />
+    </div>
+    <FormLabel C={C}>Especialidades</FormLabel><ChipGroup C={C} items={ESPECIALIDADES.map(t => [t.id, t.nome])} selected={config.temas} onToggle={v => toggle('temas', v)} />
+    <FormLabel C={C} style={{ marginTop: 14 }}>Instituições preferidas</FormLabel><ChipGroup C={C} items={instituicoesDisp.map(i => [i, i])} selected={config.instituicoes} onToggle={v => toggle('instituicoes', v)} emptyLabel="Nenhuma instituição cadastrada" />
+    <FormLabel C={C} style={{ marginTop: 14 }}>Anos preferidos</FormLabel><ChipGroup C={C} items={ANOS_QUESTOES.map(a => [a, String(a)])} selected={config.anos} onToggle={v => toggle('anos', v)} />
+    <Button C={C} size="lg" icon={I.Play} onClick={iniciar} style={{ marginTop: 20 }}>Iniciar simulado</Button>
+  </Card></div>;
+}
+
+const ChipGroup = ({ C, items, selected, onToggle, emptyLabel }) => (
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+    {items.length === 0 && <span style={{ fontSize: 12, color: C.textSoft }}>{emptyLabel || 'Nenhum item disponível'}</span>}
+    {items.map(([v, l]) => {
+      const sel = selected.includes(v);
+      return <button key={v} onClick={() => onToggle(v)} style={pillStyle(C, sel)}>{l}</button>;
+    })}
+  </div>
+);
+
+// ============= FLASHCARDS =============
+function Flashcards({ flashcards, setFlashcards, questoes, setPage, C }) {
+  const [view, setView] = useState('lista');
+  const [filtroTema, setFiltroTema] = useState('todos');
+  const [filtroSubtema, setFiltroSubtema] = useState('todos');
+  const [filtroRevisao, setFiltroRevisao] = useState('todos');
+  const [revisIdx, setRevisIdx] = useState(0);
+  const [mostrar, setMostrar] = useState(false);
+  const [novoSubtema, setNovoSubtema] = useState('');
+  const [novo, setNovo] = useState({ frente: '', verso: '', tema: 'cardio', subtema: '', tags: [], dificuldade: 'media' });
+
+  const hoje = new Date();
+  const normalizarData = (d) => d ? new Date(d) : null;
+  const estaVencido = (f) => !f.proximaRevisao || normalizarData(f.proximaRevisao) <= hoje || f.revisarHoje;
+  const subtemas = [...new Set(flashcards.filter(f => filtroTema === 'todos' || f.tema === filtroTema).map(f => f.subtema).filter(Boolean))].sort();
+
+  const filtrados = flashcards.filter(f => {
+    if (filtroTema !== 'todos' && f.tema !== filtroTema) return false;
+    if (filtroSubtema !== 'todos' && (f.subtema || '') !== filtroSubtema) return false;
+    if (filtroRevisao === 'vencidos' && !estaVencido(f)) return false;
+    if (filtroRevisao === 'futuros' && estaVencido(f)) return false;
+    return true;
+  });
+  const paraRevisar = filtrados.filter(estaVencido);
+  const filaRevisao = paraRevisar.length ? paraRevisar : filtrados;
+
+  const salvar = () => {
+    if (!novo.frente.trim() || !novo.verso.trim()) return;
+    setFlashcards([{
+      ...novo,
+      id: 'f-' + Date.now(),
+      dataCriacao: new Date().toISOString(),
+      proximaRevisao: new Date().toISOString(),
+      intervaloDias: 0,
+      revisarHoje: true,
+      historico: [],
+      questaoId: null
+    }, ...flashcards]);
+    setNovo({ frente: '', verso: '', tema: novo.tema, subtema: novo.subtema, tags: [], dificuldade: 'media' });
+    setView('lista');
+  };
+
+  const revisar = (f, nivel) => {
+    const mapa = {
+      dificil: { dias: 1, label: 'Difícil' },
+      medio: { dias: Math.max(3, (f.intervaloDias || 1) * 2), label: 'Médio' },
+      facil: { dias: Math.max(7, (f.intervaloDias || 1) * 3), label: 'Fácil' },
+    };
+    const regra = mapa[nivel];
+    const prox = new Date();
+    prox.setDate(prox.getDate() + regra.dias);
+    setFlashcards(flashcards.map(x => x.id === f.id ? {
+      ...x,
+      dificuldade: nivel,
+      intervaloDias: regra.dias,
+      proximaRevisao: prox.toISOString(),
+      revisarHoje: false,
+      historico: [...(x.historico || []), { data: new Date().toISOString(), nivel, intervaloDias: regra.dias }]
+    } : x));
+    setMostrar(false);
+    setRevisIdx(revisIdx + 1);
+  };
+
+  const irParaQuestao = (questaoId) => {
+    if (!questaoId) return;
+    storage.set('lumen_open_question', questaoId);
+    setPage('questoes');
+  };
+
+  if (view === 'revisar' && filaRevisao.length > 0) {
+    const f = filaRevisao[revisIdx % filaRevisao.length];
+    const tema = ESPECIALIDADES.find(t => t.id === f.tema);
+    return <div className="lumen-fade-in" style={{ maxWidth: 760, margin: '0 auto' }}>
+      <Button C={C} variant="ghost" icon={I.ArrowL} onClick={() => setView('lista')} style={{ marginBottom: 16 }}>Voltar</Button>
+      <div style={{ textAlign: 'center', marginBottom: 16, fontSize: 13, color: C.textMuted }}>
+        {revisIdx + 1} de {filaRevisao.length} · {tema?.nome || 'Especialidade'} {f.subtema ? `• ${f.subtema}` : ''}
+      </div>
+      <Card C={C} onClick={() => setMostrar(!mostrar)} style={{ minHeight: 320, padding: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div>
+          <div style={{ fontSize: 11, color: C.textSoft, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 16 }}>{mostrar ? 'Verso' : 'Frente'}</div>
+          <div className="lumen-serif" style={{ fontSize: 'clamp(18px, 3vw, 26px)', lineHeight: 1.4, color: C.text, fontWeight: 500 }}>{mostrar ? f.verso : f.frente}</div>
+          {!mostrar && <div style={{ marginTop: 24, fontSize: 12, color: C.textSoft }}>Clique para virar</div>}
+        </div>
+      </Card>
+      {f.questaoId && <div style={{ textAlign: 'center', marginTop: 12 }}><Button C={C} variant="secondary" size="sm" icon={I.Book} onClick={() => irParaQuestao(f.questaoId)}>Ir diretamente para a questão</Button></div>}
+      {mostrar && <div style={{ display: 'flex', gap: 8, marginTop: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Button C={C} variant="danger" onClick={() => revisar(f, 'dificil')}>Difícil · revisar em 1 dia</Button>
+        <Button C={C} variant="secondary" onClick={() => revisar(f, 'medio')}>Médio · revisar em poucos dias</Button>
+        <Button C={C} variant="success" onClick={() => revisar(f, 'facil')}>Fácil · revisar em 1 semana+</Button>
+      </div>}
+    </div>;
+  }
+
+  if (view === 'criar') {
+    const subtemasDaEspecialidade = [...new Set(flashcards.filter(f => f.tema === novo.tema).map(f => f.subtema).filter(Boolean))].sort();
+    return <div className="lumen-fade-in"><Button C={C} variant="ghost" icon={I.ArrowL} onClick={() => setView('lista')} style={{ marginBottom: 16 }}>Voltar</Button><Card C={C}>
+      <h3 className="lumen-serif" style={{ fontSize: 22, margin: '0 0 16px' }}>Novo flashcard</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 16 }}>
+        <div><FormLabel C={C}>Especialidade</FormLabel><select value={novo.tema} onChange={e => setNovo({...novo, tema: e.target.value, subtema: ''})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div>
+        <div><FormLabel C={C}>Subtema</FormLabel><select value={novo.subtema} onChange={e => setNovo({...novo, subtema: e.target.value})} style={inputStyle(C)}><option value="">Sem subtema</option>{subtemasDaEspecialidade.map(s => <option key={s}>{s}</option>)}</select></div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <input value={novoSubtema} onChange={e => setNovoSubtema(e.target.value)} placeholder="Adicionar novo subtema nesta especialidade" style={{ ...inputStyle(C), padding: '8px 10px' }} />
+        <Button C={C} variant="secondary" onClick={() => { if (novoSubtema.trim()) { setNovo({...novo, subtema: novoSubtema.trim()}); setNovoSubtema(''); } }}>Usar subtema</Button>
+      </div>
+      <FormLabel C={C}>Frente</FormLabel><textarea value={novo.frente} onChange={e => setNovo({...novo, frente: e.target.value})} style={{ ...inputStyle(C), minHeight: 80, marginBottom: 12 }} />
+      <FormLabel C={C}>Verso</FormLabel><textarea value={novo.verso} onChange={e => setNovo({...novo, verso: e.target.value})} style={{ ...inputStyle(C), minHeight: 100, marginBottom: 12 }} />
+      <div style={{ maxWidth: 220, marginBottom: 16 }}><FormLabel C={C}>Dificuldade inicial</FormLabel><select value={novo.dificuldade} onChange={e => setNovo({...novo, dificuldade: e.target.value})} style={inputStyle(C)}><option value="facil">Fácil</option><option value="media">Média</option><option value="dificil">Difícil</option></select></div>
+      <Button C={C} icon={I.Save} onClick={salvar}>Salvar flashcard</Button>
+    </Card></div>;
+  }
+
+  return <div className="lumen-fade-in">
+    <Card C={C} style={{ marginBottom: 16 }}>
+      <h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 8px' }}>Organização dos flashcards</h3>
+      <p style={{ margin: 0, color: C.textMuted, fontSize: 13 }}>Agora os flashcards ficam por especialidade e subtema. A revisão espaçada é calculada conforme a dificuldade escolhida ao responder.</p>
+    </Card>
+    <div style={{ display: 'flex', gap: 10, marginBottom: 18, flexWrap: 'wrap' }}>
+      <Button C={C} icon={I.Plus} onClick={() => setView('criar')}>Novo flashcard</Button>
+      <Button C={C} variant="secondary" icon={I.Play} onClick={() => { setRevisIdx(0); setMostrar(false); setView('revisar'); }} disabled={filaRevisao.length === 0}>Revisar ({filaRevisao.length})</Button>
+      <select value={filtroTema} onChange={e => { setFiltroTema(e.target.value); setFiltroSubtema('todos'); }} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 13 }}><option value="todos">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
+      <select value={filtroSubtema} onChange={e => setFiltroSubtema(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 13 }}><option value="todos">Todos os subtemas</option>{subtemas.map(s => <option key={s}>{s}</option>)}</select>
+      <select value={filtroRevisao} onChange={e => setFiltroRevisao(e.target.value)} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${C.border}`, background: C.card, color: C.text, fontSize: 13 }}><option value="todos">Todos</option><option value="vencidos">Para revisar hoje</option><option value="futuros">Agendados para depois</option></select>
+    </div>
+    {filtrados.length === 0 ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.Layers size={32} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12, marginBottom: 4 }}>Nenhum flashcard ainda.</div><div style={{ fontSize: 13, color: C.textSoft }}>Crie flashcards por especialidade e subtema.</div></Card> :
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>{filtrados.map(f => { const tema = ESPECIALIDADES.find(t => t.id === f.tema); const prox = f.proximaRevisao ? new Date(f.proximaRevisao).toLocaleDateString('pt-BR') : 'hoje'; return <Card key={f.id} C={C} hover style={{ padding: 16 }}><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, gap: 6, flexWrap: 'wrap' }}>{tema && <Badge C={C}>{tema.nome}</Badge>}<Badge C={C} color="soft">{f.subtema || 'Sem subtema'}</Badge>{f.questaoId && <Badge C={C} color="soft">Q vinculada</Badge>}</div><div className="lumen-serif" style={{ fontSize: 15, fontWeight: 500, color: C.text, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{f.frente}</div><div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{f.verso}</div><div style={{ marginTop: 10, fontSize: 12, color: estaVencido(f) ? C.error : C.textSoft }}>Próxima revisão: {prox}</div><div style={{ display: 'flex', gap: 6, marginTop: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>{f.questaoId && <Button C={C} variant="secondary" size="sm" icon={I.Book} onClick={() => irParaQuestao(f.questaoId)}>Ir para questão</Button>}<button onClick={() => { if (confirm('Deletar este flashcard?')) setFlashcards(flashcards.filter(x => x.id !== f.id)); }} style={{ padding: 6, color: C.textSoft, display: 'flex' }}><I.Trash size={13} /></button></div></Card>; })}</div>}
+  </div>;
+}
+
+// ============= CRONOGRAMA =============
+// ============= CRONOGRAMA =============
+function Cronograma({ cronograma, setCronograma, C }) {
+  const [editando, setEditando] = useState(null);
+
+  const novaSemana = () => {
+    const hoje = new Date();
+    const fim = new Date(hoje.getTime() + 6 * 86400000);
+    const s = {
+      id: 's-' + Date.now(),
+      inicio: hoje.toLocaleDateString('pt-BR'),
+      fim: fim.toLocaleDateString('pt-BR'),
+      dias: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => ({
+        nome: d, temas: '', temasChecklist: [], questoes: '', flashcards: '', concluido: false
+      })),
+      metaQuestoes: 50, metaFlashcards: 20, metaArtigos: 2, observacoes: ''
+    };
+    setCronograma({ semanas: [s, ...(cronograma.semanas || [])] });
+    setEditando(s.id);
+  };
+
+  const atualizar = (id, campo, valor) => {
+    setCronograma({
+      semanas: cronograma.semanas.map(s => s.id === id ? { ...s, [campo]: valor } : s)
+    });
+  };
+
+  const atualizarDia = (id, idxDia, campo, valor) => {
+    setCronograma({
+      semanas: cronograma.semanas.map(s => s.id === id ? {
+        ...s, dias: s.dias.map((d, i) => {
+          if (i !== idxDia) return d;
+          const atualizado = { ...d, [campo]: valor };
+          if (campo === 'temas') {
+            const temasChecklist = normalizarTemasDoDia(atualizado);
+            return { ...atualizado, temasChecklist, concluido: temasChecklist.length > 0 && temasChecklist.every(t => t.concluido) };
+          }
+          return atualizado;
+        })
+      } : s)
+    });
+  };
+
+  const atualizarTemaDia = (id, idxDia, idxTema, concluido) => {
+    setCronograma({
+      semanas: cronograma.semanas.map(s => s.id === id ? {
+        ...s, dias: s.dias.map((d, i) => {
+          if (i !== idxDia) return d;
+          const temasChecklist = normalizarTemasDoDia(d).map((t, j) => j === idxTema ? { ...t, concluido } : t);
+          return { ...d, temasChecklist, concluido: temasChecklist.length > 0 && temasChecklist.every(t => t.concluido) };
+        })
+      } : s)
+    });
+  };
+
+  const semanas = cronograma.semanas || [];
+  const historicoSemanas = semanas.map(s => {
+    const resumo = resumoConclusaoTemas(s.dias || []);
+    const pct = resumo.total ? Math.round((resumo.concluidos / resumo.total) * 100) : 0;
+    return { ...s, resumo, pct };
+  });
+  const temasEstudados = semanas.flatMap(s =>
+    (s.dias || []).flatMap(dia =>
+      normalizarTemasDoDia(dia)
+        .filter(t => t.concluido)
+        .map(t => ({ titulo: t.titulo, dia: dia.nome, semana: `${s.inicio} a ${s.fim}` }))
+    )
+  );
+
+  return (
+    <div className="lumen-fade-in">
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+        <p style={{ color: C.textMuted, fontSize: 14, margin: 0 }}>
+          Organize seus estudos por semana, defina metas e acompanhe o progresso.
+        </p>
+        <Button C={C} icon={I.Plus} onClick={novaSemana}>Nova semana</Button>
+      </div>
+
+      {(!semanas || semanas.length === 0) ? (
+        <Card C={C} style={{ textAlign: 'center', padding: 60 }}>
+          <I.Calendar size={32} />
+          <div style={{ fontSize: 15, color: C.textMuted, marginTop: 12, marginBottom: 4 }}>Nenhuma semana criada.</div>
+          <div style={{ fontSize: 13, color: C.textSoft, marginBottom: 16 }}>
+            Crie sua primeira semana para começar a planejar.
+          </div>
+        </Card>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Card C={C}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+              <div>
+                <h3 className="lumen-serif" style={{ fontSize: 19, margin: 0, color: C.text }}>Histórico do cronograma</h3>
+                <div style={{ fontSize: 12.5, color: C.textMuted, marginTop: 4 }}>Semanas criadas e temas já marcados como estudados.</div>
+              </div>
+              <Badge C={C}>{temasEstudados.length} temas estudados</Badge>
+            </div>
+
+            <div className="lumen-grid-resp" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 1fr)', gap: 16 }}>
+              <div>
+                <div style={{ fontSize: 11, color: C.textSoft, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Histórico das semanas</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto' }} className="lumen-scroll">
+                  {historicoSemanas.map(sHist => (
+                    <div key={sHist.id} style={{ padding: 10, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                        <strong style={{ fontSize: 12.5, color: C.text }}>Semana de {sHist.inicio} a {sHist.fim}</strong>
+                        <span style={{ fontSize: 12, color: C.textMuted }}>{sHist.resumo.concluidos}/{sHist.resumo.total}</span>
+                      </div>
+                      <div style={{ height: 6, background: C.borderSoft, borderRadius: 4, overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${sHist.pct}%`, background: C.accent }} />
+                      </div>
+                      <div style={{ fontSize: 11.5, color: C.textSoft, marginTop: 5 }}>{sHist.pct}% realizado</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 11, color: C.textSoft, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>Temas já estudados</div>
+                {temasEstudados.length === 0 ? (
+                  <div style={{ padding: 18, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}`, fontSize: 12.5, color: C.textSoft }}>
+                    Marque temas como realizados para formar seu histórico de estudos.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7, maxHeight: 260, overflowY: 'auto' }} className="lumen-scroll">
+                    {temasEstudados.slice(0, 80).map((t, idx) => (
+                      <div key={idx} style={{ padding: 9, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}` }}>
+                        <div style={{ fontSize: 12.5, color: C.text, fontWeight: 600 }}>{t.titulo}</div>
+                        <div style={{ fontSize: 11, color: C.textSoft, marginTop: 3 }}>{t.dia} • {t.semana}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {semanas.map(s => (
+            <Card key={s.id} C={C}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+                <h3 className="lumen-serif" style={{ fontSize: 19, margin: 0, color: C.text }}>
+                  Semana de {s.inicio} a {s.fim}
+                </h3>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button C={C} variant="secondary" size="sm" icon={I.Edit}
+                    onClick={() => setEditando(editando === s.id ? null : s.id)}>
+                    {editando === s.id ? 'Fechar' : 'Editar'}
+                  </Button>
+                  <Button C={C} variant="ghost" size="sm" icon={I.Trash}
+                    onClick={() => { if (confirm('Deletar esta semana?')) setCronograma({semanas: cronograma.semanas.filter(x => x.id !== s.id)}); }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, marginBottom: 16 }}>
+                <MetaCard C={C} label="Meta questões" valor={s.metaQuestoes} editavel={editando === s.id}
+                  onChange={v => atualizar(s.id, 'metaQuestoes', v)} />
+                <MetaCard C={C} label="Meta flashcards" valor={s.metaFlashcards} editavel={editando === s.id}
+                  onChange={v => atualizar(s.id, 'metaFlashcards', v)} />
+                <MetaCard C={C} label="Meta artigos" valor={s.metaArtigos} editavel={editando === s.id}
+                  onChange={v => atualizar(s.id, 'metaArtigos', v)} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8 }}>
+                {s.dias.map((dia, i) => (
+                  <div key={i} style={{
+                    padding: 12, background: C.bg, borderRadius: 8, border: `1px solid ${C.borderSoft}`,
+                    opacity: dia.concluido ? 0.6 : 1
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <strong style={{ fontSize: 12, color: C.text, letterSpacing: '0.05em' }}>{dia.nome}</strong>
+                      <span style={{ fontSize: 10.5, color: C.textSoft }}>{normalizarTemasDoDia(dia).filter(t => t.concluido).length}/{normalizarTemasDoDia(dia).length}</span>
+                    </div>
+                    {editando === s.id ? (
+                      <>
+                        <textarea value={dia.temas} onChange={e => atualizarDia(s.id, i, 'temas', e.target.value)}
+                          placeholder="Um tema por linha..." style={{
+                            width: '100%', padding: 6, borderRadius: 4, border: `1px solid ${C.border}`,
+                            background: C.card, color: C.text, fontSize: 12, minHeight: 60, resize: 'vertical'
+                          }} />
+                        <div style={{ fontSize: 10.5, color: C.textSoft, marginTop: 6 }}>Digite um tema por linha para marcar individualmente.</div>
+                      </>
+                    ) : (
+                      normalizarTemasDoDia(dia).length ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                          {normalizarTemasDoDia(dia).map((tema, j) => (
+                            <label key={tema.id || j} style={{ display: 'flex', gap: 7, alignItems: 'flex-start', cursor: 'pointer' }}>
+                              <input type="checkbox" checked={!!tema.concluido} onChange={e => atualizarTemaDia(s.id, i, j, e.target.checked)} style={{ marginTop: 2 }} />
+                              <span style={{ fontSize: 12, color: tema.concluido ? C.textSoft : C.text, lineHeight: 1.4, textDecoration: tema.concluido ? 'line-through' : 'none' }}>{tema.titulo}</span>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 12, color: C.textSoft, lineHeight: 1.4 }}>—</div>
+                      )
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MetaCard = ({ C, label, valor, editavel, onChange }) => (
+  <div style={{ padding: 12, background: C.bg, borderRadius: 8, border: `1px solid ${C.borderSoft}` }}>
+    <div style={{ fontSize: 11, color: C.textSoft, fontWeight: 600,
+      letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+    {editavel ? (
+      <input type="number" value={valor} onChange={e => onChange(parseInt(e.target.value) || 0)}
+        style={{ width: '100%', fontSize: 22, fontFamily: 'Fraunces, serif', fontWeight: 600,
+          color: C.accent, background: 'transparent', border: 'none', padding: 0 }} />
+    ) : (
+      <div style={{ fontSize: 24, fontFamily: 'Fraunces, serif', fontWeight: 600, color: C.accent }}>{valor}</div>
+    )}
+  </div>
+);
+
+// ============= ARTIGOS =============
+function Artigos({ artigos, setArtigos, C }) {
+  const artigoVazio = () => ({ titulo: '', tema: 'cardio', fonte: '', ano: new Date().getFullYear(), link: '', resumo: '', recomendacoes: '', praticos: '', mudaPratica: '', observacoes: '', tags: [] });
+  const resumoVazio = () => ({ titulo: '', tema: 'cardio', subtema: '', conteudo: '', pontosChave: '', condutaProva: '', observacoes: '', dataCriacao: new Date().toISOString() });
+
+  const [aba, setAba] = useState('artigos');
+  const [editing, setEditing] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [filtroTema, setFiltroTema] = useState('todos');
+  const [filtroAno, setFiltroAno] = useState('todos');
+  const [form, setForm] = useState(artigoVazio());
+
+  const [resumos, setResumos] = useState(() => storage.get('lumen_resumos_biblioteca', []));
+  const [editingResumo, setEditingResumo] = useState(null);
+  const [showResumoForm, setShowResumoForm] = useState(false);
+  const [filtroResumoTema, setFiltroResumoTema] = useState('todos');
+  const [filtroResumoSubtema, setFiltroResumoSubtema] = useState('todos');
+  const [resumoForm, setResumoForm] = useState(resumoVazio());
+
+  useEffect(() => { storage.set('lumen_resumos_biblioteca', resumos); }, [resumos]);
+
+  const anos = [...new Set([...ANOS_QUESTOES, ...artigos.map(a => Number(a.ano)).filter(Boolean)])].sort((a,b)=>b-a);
+  const filtrados = artigos.filter(a => (filtroTema === 'todos' || a.tema === filtroTema) && (filtroAno === 'todos' || String(a.ano) === filtroAno));
+
+  const subtemasResumo = useMemo(() => {
+    return [...new Set(resumos
+      .filter(r => filtroResumoTema === 'todos' || r.tema === filtroResumoTema)
+      .map(r => (r.subtema || '').trim())
+      .filter(Boolean))].sort();
+  }, [resumos, filtroResumoTema]);
+
+  const resumosFiltrados = resumos.filter(r => {
+    if (filtroResumoTema !== 'todos' && r.tema !== filtroResumoTema) return false;
+    if (filtroResumoSubtema !== 'todos' && (r.subtema || '') !== filtroResumoSubtema) return false;
+    return true;
+  });
+
+  const salvar = () => {
+    if (!form.titulo.trim()) return;
+    if (editing) setArtigos(artigos.map(a => a.id === editing ? { ...form, id: editing } : a));
+    else setArtigos([{ ...form, id: 'a-' + Date.now() }, ...artigos]);
+    setShowForm(false); setEditing(null); setForm(artigoVazio());
+  };
+
+  const salvarResumo = () => {
+    if (!resumoForm.titulo.trim()) return;
+    const payload = { ...resumoForm, subtema: String(resumoForm.subtema || '').trim(), dataAtualizacao: new Date().toISOString() };
+    if (editingResumo) setResumos(resumos.map(r => r.id === editingResumo ? { ...payload, id: editingResumo } : r));
+    else setResumos([{ ...payload, id: 'res-' + Date.now() }, ...resumos]);
+    setShowResumoForm(false); setEditingResumo(null); setResumoForm(resumoVazio());
+  };
+
+  const excluirResumo = (id) => {
+    if (confirm('Deseja realmente excluir este resumo?')) setResumos(resumos.filter(r => r.id !== id));
+  };
+
+  const AbaButton = ({ id, children }) => (
+    <button onClick={() => setAba(id)} style={{
+      padding: '9px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700,
+      background: aba === id ? C.accent : C.card, color: aba === id ? '#fff' : C.textMuted,
+      border: `1px solid ${aba === id ? C.accent : C.borderSoft}`
+    }}>{children}</button>
+  );
+
+  return <div className="lumen-fade-in">
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
+      <p style={{ color: C.textMuted, fontSize: 14, margin: 0 }}>Biblioteca para artigos, guidelines, diretrizes e resumos por especialidade.</p>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <AbaButton id="artigos">Artigos/Guidelines</AbaButton>
+        <AbaButton id="resumos">Resumos</AbaButton>
+      </div>
+    </div>
+
+    {aba === 'artigos' && <>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Button C={C} icon={I.Plus} onClick={() => { setShowForm(true); setEditing(null); setForm(artigoVazio()); }}>Novo artigo/guideline</Button>
+        <select value={filtroTema} onChange={e => setFiltroTema(e.target.value)} style={{ ...inputStyle(C), maxWidth: 240, padding: '8px 12px' }}><option value="todos">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
+        <select value={filtroAno} onChange={e => setFiltroAno(e.target.value)} style={{ ...inputStyle(C), maxWidth: 180, padding: '8px 12px' }}><option value="todos">Todos os anos</option>{anos.map(a => <option key={a} value={a}>{a}</option>)}</select>
+      </div>
+      {showForm && <Card C={C} style={{ marginBottom: 16 }}><h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editing ? 'Editar' : 'Novo'} artigo/guideline</h3><FormInput C={C} label="Título" value={form.titulo} onChange={v => setForm({...form, titulo: v})} /><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 10 }}><div><FormLabel C={C}>Especialidade</FormLabel><select value={form.tema} onChange={e => setForm({...form, tema: e.target.value})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div><FormInput C={C} label="Fonte" value={form.fonte} onChange={v => setForm({...form, fonte: v})} /><FormInput C={C} label="Ano" type="number" value={form.ano} onChange={v => setForm({...form, ano: parseInt(v) || ''})} /><FormInput C={C} label="Link" value={form.link} onChange={v => setForm({...form, link: v})} /></div><FormLabel C={C} style={{ marginTop: 12 }}>Resumo estruturado</FormLabel><textarea value={form.resumo} onChange={e => setForm({...form, resumo: e.target.value})} style={{ ...inputStyle(C), minHeight: 80 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Principais recomendações</FormLabel><textarea value={form.recomendacoes} onChange={e => setForm({...form, recomendacoes: e.target.value})} style={{ ...inputStyle(C), minHeight: 80 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Pontos práticos</FormLabel><textarea value={form.praticos} onChange={e => setForm({...form, praticos: e.target.value})} style={{ ...inputStyle(C), minHeight: 80 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Condutas que mudam prática</FormLabel><textarea value={form.mudaPratica} onChange={e => setForm({...form, mudaPratica: e.target.value})} style={{ ...inputStyle(C), minHeight: 60 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Observações pessoais</FormLabel><textarea value={form.observacoes} onChange={e => setForm({...form, observacoes: e.target.value})} style={{ ...inputStyle(C), minHeight: 60 }} /><div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvar}>Salvar</Button><Button C={C} variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button></div></Card>}
+      {filtrados.length === 0 && !showForm ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.BookMark size={32} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhum item com esses filtros.</div></Card> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>{filtrados.map(a => { const tema = ESPECIALIDADES.find(t => t.id === a.tema); return <Card key={a.id} C={C} hover><div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>{tema && <Badge C={C}>{tema.nome}</Badge>}<div style={{ fontSize: 12, color: C.textSoft }}>{a.ano}</div></div><h4 className="lumen-serif" style={{ fontSize: 16, margin: '4px 0 6px', fontWeight: 500, color: C.text, lineHeight: 1.35 }}>{a.titulo}</h4><div style={{ fontSize: 12, color: C.textSoft, marginBottom: 10 }}>{a.fonte}</div>{a.resumo && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{a.resumo}</div>}<div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end', alignItems: 'center' }}>{a.link && <a href={a.link} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: C.accent, fontWeight: 600, marginRight: 'auto' }}>Ver fonte ↗</a>}<button onClick={() => { setForm(a); setEditing(a.id); setShowForm(true); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }}><I.Edit size={13} /></button><button onClick={() => { if (confirm('Deseja realmente excluir este artigo/guideline?')) setArtigos(artigos.filter(x => x.id !== a.id)); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }}><I.Trash size={13} /></button></div></Card>; })}</div>}
+    </>}
+
+    {aba === 'resumos' && <>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+        <Button C={C} icon={I.Plus} onClick={() => { setShowResumoForm(true); setEditingResumo(null); setResumoForm(resumoVazio()); }}>Novo resumo</Button>
+        <select value={filtroResumoTema} onChange={e => { setFiltroResumoTema(e.target.value); setFiltroResumoSubtema('todos'); }} style={{ ...inputStyle(C), maxWidth: 240, padding: '8px 12px' }}><option value="todos">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
+        <select value={filtroResumoSubtema} onChange={e => setFiltroResumoSubtema(e.target.value)} style={{ ...inputStyle(C), maxWidth: 240, padding: '8px 12px' }}><option value="todos">Todos os subtemas</option>{subtemasResumo.map(s => <option key={s} value={s}>{s}</option>)}</select>
+      </div>
+
+      {showResumoForm && <Card C={C} style={{ marginBottom: 16 }}>
+        <h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editingResumo ? 'Editar' : 'Novo'} resumo</h3>
+        <FormInput C={C} label="Título do resumo" value={resumoForm.titulo} onChange={v => setResumoForm({...resumoForm, titulo: v})} />
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 10 }}>
+          <div><FormLabel C={C}>Especialidade</FormLabel><select value={resumoForm.tema} onChange={e => setResumoForm({...resumoForm, tema: e.target.value})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div>
+          <div><FormLabel C={C}>Subtema</FormLabel><input list="subtemas-resumos" value={resumoForm.subtema} onChange={e => setResumoForm({...resumoForm, subtema: e.target.value})} placeholder="Ex.: Hipercalcemia, Sepse, ICFEp..." style={inputStyle(C)} /><datalist id="subtemas-resumos">{[...new Set(resumos.map(r => r.subtema).filter(Boolean))].sort().map(s => <option key={s} value={s} />)}</datalist></div>
+        </div>
+        <FormLabel C={C} style={{ marginTop: 12 }}>Resumo</FormLabel><textarea value={resumoForm.conteudo} onChange={e => setResumoForm({...resumoForm, conteudo: e.target.value})} style={{ ...inputStyle(C), minHeight: 120 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Pontos-chave</FormLabel><textarea value={resumoForm.pontosChave} onChange={e => setResumoForm({...resumoForm, pontosChave: e.target.value})} style={{ ...inputStyle(C), minHeight: 80 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Dica de prova / pegadinhas</FormLabel><textarea value={resumoForm.condutaProva} onChange={e => setResumoForm({...resumoForm, condutaProva: e.target.value})} style={{ ...inputStyle(C), minHeight: 70 }} />
+        <FormLabel C={C} style={{ marginTop: 12 }}>Observações pessoais</FormLabel><textarea value={resumoForm.observacoes} onChange={e => setResumoForm({...resumoForm, observacoes: e.target.value})} style={{ ...inputStyle(C), minHeight: 60 }} />
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvarResumo}>Salvar resumo</Button><Button C={C} variant="ghost" onClick={() => { setShowResumoForm(false); setEditingResumo(null); }}>Cancelar</Button></div>
+      </Card>}
+
+      {resumosFiltrados.length === 0 && !showResumoForm ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.File size={32} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhum resumo cadastrado. Clique em “Novo resumo”.</div></Card> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>{resumosFiltrados.map(r => { const tema = ESPECIALIDADES.find(t => t.id === r.tema); return <Card key={r.id} C={C} hover><div style={{ display: 'flex', gap: 6, justifyContent: 'space-between', marginBottom: 8, alignItems: 'center' }}><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>{tema && <Badge C={C}>{tema.nome}</Badge>}{r.subtema && <Badge C={C} color="soft">{r.subtema}</Badge>}</div></div><h4 className="lumen-serif" style={{ fontSize: 17, margin: '4px 0 8px', fontWeight: 500, color: C.text, lineHeight: 1.35 }}>{r.titulo}</h4>{r.conteudo && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8 }}>{r.conteudo}</div>}{r.condutaProva && <div style={{ padding: 10, borderRadius: 8, background: C.accentSoft, color: C.accent, fontSize: 12.5, lineHeight: 1.45, marginTop: 8 }}><strong>Dica de prova:</strong> {r.condutaProva}</div>}<div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}><button onClick={() => { setResumoForm(r); setEditingResumo(r.id); setShowResumoForm(true); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Editar resumo"><I.Edit size={13} /></button><button onClick={() => excluirResumo(r.id)} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Excluir resumo"><I.Trash size={13} /></button></div></Card>; })}</div>}
+    </>}
+  </div>;
+}
+
+
+// ============= CALCULADORAS & ESCORES =============
+function CalculadorasEscores({ calculadoras, setCalculadoras, C }) {
+  const itemVazio = () => ({ id: 'calc-' + Date.now(), nome: '', especialidade: ESPECIALIDADES[0]?.id || 'outros', subtema: '', tipo: 'Calculadora', formula: '', interpretacao: '', observacoes: '' });
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(itemVazio());
+  const [filtroTema, setFiltroTema] = useState('todos');
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [filtroSubtema, setFiltroSubtema] = useState('todos');
+
+  const subtemas = useMemo(() => [...new Set((calculadoras || []).map(c => c.subtema).filter(Boolean))].sort(), [calculadoras]);
+  const filtradas = useMemo(() => (calculadoras || []).filter(c => {
+    if (filtroTema !== 'todos' && c.especialidade !== filtroTema) return false;
+    if (filtroTipo !== 'todos' && c.tipo !== filtroTipo) return false;
+    if (filtroSubtema !== 'todos' && c.subtema !== filtroSubtema) return false;
+    return true;
+  }), [calculadoras, filtroTema, filtroTipo, filtroSubtema]);
+
+  const salvar = () => {
+    if (!form.nome.trim()) return alert('Preencha o nome da calculadora/escore.');
+    const item = { ...form, atualizadoEm: new Date().toISOString() };
+    if (editing) setCalculadoras(calculadoras.map(c => c.id === editing ? item : c));
+    else setCalculadoras([item, ...(calculadoras || [])]);
+    setShowForm(false); setEditing(null); setForm(itemVazio());
+  };
+  const excluir = (id) => { if (confirm('Deseja realmente excluir esta calculadora/escore?')) setCalculadoras((calculadoras || []).filter(c => c.id !== id)); };
+
+  return <div className="lumen-fade-in">
+    <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Button C={C} icon={I.Plus} onClick={() => { setShowForm(true); setEditing(null); setForm(itemVazio()); }}>Nova calculadora/escore</Button>
+      <select value={filtroTema} onChange={e => { setFiltroTema(e.target.value); setFiltroSubtema('todos'); }} style={{ ...inputStyle(C), maxWidth: 240, padding: '8px 12px' }}><option value="todos">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
+      <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ ...inputStyle(C), maxWidth: 190, padding: '8px 12px' }}><option value="todos">Todos os tipos</option><option>Calculadora</option><option>Escore</option><option>Critério diagnóstico</option><option>Classificação</option></select>
+      <select value={filtroSubtema} onChange={e => setFiltroSubtema(e.target.value)} style={{ ...inputStyle(C), maxWidth: 220, padding: '8px 12px' }}><option value="todos">Todos os subtemas</option>{subtemas.map(s => <option key={s} value={s}>{s}</option>)}</select>
+    </div>
+    {showForm && <Card C={C} style={{ marginBottom: 16 }}>
+      <h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editing ? 'Editar' : 'Nova'} calculadora/escore</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+        <FormInput C={C} label="Nome" value={form.nome} onChange={v => setForm({...form, nome: v})} />
+        <div><FormLabel C={C}>Especialidade</FormLabel><select value={form.especialidade} onChange={e => setForm({...form, especialidade: e.target.value})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div>
+        <div><FormLabel C={C}>Tipo</FormLabel><select value={form.tipo} onChange={e => setForm({...form, tipo: e.target.value})} style={inputStyle(C)}><option>Calculadora</option><option>Escore</option><option>Critério diagnóstico</option><option>Classificação</option></select></div>
+        <div><FormLabel C={C}>Subtema</FormLabel><input list="subtemas-calculadoras" value={form.subtema} onChange={e => setForm({...form, subtema: e.target.value})} placeholder="Ex.: Sepse, DRC, TEP..." style={inputStyle(C)} /><datalist id="subtemas-calculadoras">{subtemas.map(s => <option key={s} value={s} />)}</datalist></div>
+      </div>
+      <FormLabel C={C} style={{ marginTop: 12 }}>Fórmula / variáveis / passo a passo</FormLabel><textarea value={form.formula} onChange={e => setForm({...form, formula: e.target.value})} style={{ ...inputStyle(C), minHeight: 90 }} placeholder="Ex.: Critérios, pontos por variável, cálculo..." />
+      <FormLabel C={C} style={{ marginTop: 12 }}>Interpretação do resultado</FormLabel><textarea value={form.interpretacao} onChange={e => setForm({...form, interpretacao: e.target.value})} style={{ ...inputStyle(C), minHeight: 80 }} placeholder="Ex.: baixo/intermediário/alto risco; conduta sugerida..." />
+      <FormLabel C={C} style={{ marginTop: 12 }}>Observações / dica de prova</FormLabel><textarea value={form.observacoes} onChange={e => setForm({...form, observacoes: e.target.value})} style={{ ...inputStyle(C), minHeight: 70 }} />
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvar}>Salvar</Button><Button C={C} variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button></div>
+    </Card>}
+    {filtradas.length === 0 && !showForm ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.Target size={34} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhuma calculadora/escore cadastrado. Clique em “Nova calculadora/escore”.</div></Card> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: 14 }}>{filtradas.map(c => { const tema = ESPECIALIDADES.find(t => t.id === c.especialidade); return <Card key={c.id} C={C} hover><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>{tema && <Badge C={C}>{tema.nome}</Badge>}<Badge C={C} color="soft">{c.tipo}</Badge>{c.subtema && <Badge C={C} color="soft">{c.subtema}</Badge>}</div><h4 className="lumen-serif" style={{ fontSize: 18, margin: '4px 0 8px', fontWeight: 500, color: C.text }}>{c.nome}</h4>{c.formula && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.55, whiteSpace: 'pre-wrap', marginBottom: 8 }}><strong>Como calcular:</strong><br />{c.formula}</div>}{c.interpretacao && <div style={{ padding: 10, borderRadius: 8, background: C.bg, border: `1px solid ${C.borderSoft}`, fontSize: 13, lineHeight: 1.5, color: C.textMuted, whiteSpace: 'pre-wrap' }}>{c.interpretacao}</div>}{c.observacoes && <div style={{ marginTop: 8, fontSize: 12.5, color: C.accent, lineHeight: 1.45 }}><strong>Dica:</strong> {c.observacoes}</div>}<div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}><button onClick={() => { setForm(c); setEditing(c.id); setShowForm(true); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Editar"><I.Edit size={13} /></button><button onClick={() => excluir(c.id)} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Excluir"><I.Trash size={13} /></button></div></Card>; })}</div>}
+  </div>;
+}
+
+// ============= GUIA DE ANTIMICROBIANOS =============
+function GuiaAntimicrobianos({ antimicrobianos, setAntimicrobianos, C }) {
+  const itemVazio = () => ({ id: 'atb-' + Date.now(), tipo: 'Agente etiológico', agente: '', classe: '', antibiotico: '', cobertura: '', resistencia: '', mecanismoAcao: '', observacoes: '' });
+  const tabelaVazia = () => ({
+    columns: ['Microrganismo', 'Classe', 'Antibiótico', 'Cobertura', 'Observações'],
+    rows: []
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(itemVazio());
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [busca, setBusca] = useState('');
+  const [showTabela, setShowTabela] = useState(false);
+  const [tabela, setTabela] = useState(() => storage.get('lumen_tabela_cobertura_antimicrobiana', tabelaVazia()));
+  const [filtroTabela, setFiltroTabela] = useState('');
+
+  useEffect(() => { storage.set('lumen_tabela_cobertura_antimicrobiana', tabela); }, [tabela]);
+
+  const filtrados = useMemo(() => (antimicrobianos || []).filter(a => {
+    if (filtroTipo !== 'todos' && a.tipo !== filtroTipo) return false;
+    const q = busca.toLowerCase().trim();
+    if (!q) return true;
+    return [a.agente, a.classe, a.antibiotico, a.cobertura, a.resistencia, a.mecanismoAcao, a.doseHabitual].some(v => String(v || '').toLowerCase().includes(q));
+  }), [antimicrobianos, filtroTipo, busca]);
+
+  const linhasFiltradasTabela = useMemo(() => {
+    const q = filtroTabela.toLowerCase().trim();
+    if (!q) return tabela.rows || [];
+    return (tabela.rows || []).filter(row => (row || []).some(cell => String(cell || '').toLowerCase().includes(q)));
+  }, [tabela, filtroTabela]);
+
+  const salvar = () => {
+    if (!form.agente.trim() && !form.classe.trim() && !form.antibiotico.trim()) return alert('Preencha pelo menos agente etiológico, classe ou antibiótico.');
+    const item = { ...form, mecanismoAcao: form.mecanismoAcao || form.doseHabitual || '', atualizadoEm: new Date().toISOString() };
+    delete item.doseHabitual;
+    if (editing) setAntimicrobianos(antimicrobianos.map(a => a.id === editing ? item : a));
+    else setAntimicrobianos([item, ...(antimicrobianos || [])]);
+    setShowForm(false); setEditing(null); setForm(itemVazio());
+  };
+  const excluir = (id) => { if (confirm('Deseja realmente excluir este registro do guia de antimicrobianos?')) setAntimicrobianos((antimicrobianos || []).filter(a => a.id !== id)); };
+
+  const atualizarCelula = (rowIndexOriginal, colIndex, valor) => {
+    setTabela(t => ({ ...t, rows: (t.rows || []).map((row, idx) => idx === rowIndexOriginal ? (t.columns || []).map((_, c) => c === colIndex ? valor : (row?.[c] || '')) : row) }));
+  };
+  const adicionarLinha = () => setTabela(t => ({ ...t, rows: [...(t.rows || []), (t.columns || []).map(() => '')] }));
+  const excluirLinha = (idxOriginal) => { if (confirm('Deseja excluir esta linha da planilha?')) setTabela(t => ({ ...t, rows: (t.rows || []).filter((_, i) => i !== idxOriginal) })); };
+  const adicionarColuna = () => {
+    const nome = prompt('Nome da nova coluna:');
+    if (!nome?.trim()) return;
+    setTabela(t => ({ columns: [...(t.columns || []), nome.trim()], rows: (t.rows || []).map(r => [...(r || []), '']) }));
+  };
+  const renomearColuna = (idx, nome) => setTabela(t => ({ ...t, columns: (t.columns || []).map((c, i) => i === idx ? nome : c) }));
+  const excluirColuna = (idx) => {
+    if ((tabela.columns || []).length <= 1) return alert('A planilha precisa manter pelo menos uma coluna.');
+    if (!confirm('Deseja excluir esta coluna?')) return;
+    setTabela(t => ({ columns: (t.columns || []).filter((_, i) => i !== idx), rows: (t.rows || []).map(r => (r || []).filter((_, i) => i !== idx)) }));
+  };
+  const limparTabela = () => { if (confirm('Deseja limpar todas as linhas da planilha? As colunas serão mantidas.')) setTabela(t => ({ ...t, rows: [] })); };
+
+  return <div className="lumen-fade-in">
+    <Card C={C} style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div><h3 className="lumen-serif" style={{ fontSize: 20, margin: '0 0 4px' }}>Guia pessoal de antimicrobianos</h3><div style={{ fontSize: 13, color: C.textMuted }}>Organize por agente etiológico, classe/antibiótico, mecanismo de ação e cobertura de microrganismos.</div></div>
+      <Button C={C} icon={I.File} onClick={() => setShowTabela(!showTabela)}>{showTabela ? 'Fechar filtro/planilha' : 'Abrir filtro/planilha de cobertura'}</Button>
+    </Card>
+
+    {showTabela && <Card C={C} style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <h3 className="lumen-serif" style={{ fontSize: 18, margin: 0 }}>Planilha interna de cobertura</h3>
+          <div style={{ fontSize: 12.5, color: C.textMuted, marginTop: 3 }}>Tabela em branco/editável para você criar as colunas e linhas conforme necessidade. Os dados ficam salvos neste navegador.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Button C={C} size="sm" icon={I.Plus} onClick={adicionarLinha}>Adicionar linha</Button>
+          <Button C={C} size="sm" variant="secondary" icon={I.Plus} onClick={adicionarColuna}>Adicionar coluna</Button>
+          <Button C={C} size="sm" variant="danger" icon={I.Trash} onClick={limparTabela}>Limpar linhas</Button>
+        </div>
+      </div>
+      <input value={filtroTabela} onChange={e => setFiltroTabela(e.target.value)} placeholder="Filtrar na planilha por microrganismo, classe, antibiótico ou cobertura..." style={{ ...inputStyle(C), padding: '8px 12px', marginBottom: 12 }} />
+      <div className="lumen-scroll" style={{ overflowX: 'auto', border: `1px solid ${C.borderSoft}`, borderRadius: 10 }}>
+        <table style={{ width: '100%', minWidth: 820, borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: C.bg }}>
+              {(tabela.columns || []).map((col, idx) => <th key={idx} style={{ padding: 8, borderBottom: `1px solid ${C.borderSoft}`, borderRight: `1px solid ${C.borderSoft}`, textAlign: 'left', minWidth: 150 }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input value={col} onChange={e => renomearColuna(idx, e.target.value)} style={{ ...inputStyle(C), padding: '6px 8px', fontWeight: 700 }} />
+                  <button title="Excluir coluna" onClick={() => excluirColuna(idx)} style={{ color: C.textSoft, padding: 4, display: 'flex' }}><I.X size={12} /></button>
+                </div>
+              </th>)}
+              <th style={{ width: 48, padding: 8, borderBottom: `1px solid ${C.borderSoft}` }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhasFiltradasTabela.length === 0 ? <tr><td colSpan={(tabela.columns || []).length + 1} style={{ padding: 24, color: C.textSoft, textAlign: 'center' }}>Nenhuma linha. Clique em “Adicionar linha”.</td></tr> : linhasFiltradasTabela.map((row, visibleIdx) => {
+              const idxOriginal = (tabela.rows || []).indexOf(row);
+              return <tr key={idxOriginal}>
+                {(tabela.columns || []).map((_, colIdx) => <td key={colIdx} style={{ padding: 6, borderBottom: `1px solid ${C.borderSoft}`, borderRight: `1px solid ${C.borderSoft}` }}>
+                  <textarea value={row?.[colIdx] || ''} onChange={e => atualizarCelula(idxOriginal, colIdx, e.target.value)} style={{ ...inputStyle(C), minHeight: 42, resize: 'vertical', padding: '7px 8px' }} />
+                </td>)}
+                <td style={{ padding: 6, borderBottom: `1px solid ${C.borderSoft}`, textAlign: 'center' }}><button title="Excluir linha" onClick={() => excluirLinha(idxOriginal)} style={{ color: C.error, padding: 6 }}><I.Trash size={13} /></button></td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Card>}
+
+    <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Button C={C} icon={I.Plus} onClick={() => { setShowForm(true); setEditing(null); setForm(itemVazio()); }}>Novo registro</Button>
+      <select value={filtroTipo} onChange={e => setFiltroTipo(e.target.value)} style={{ ...inputStyle(C), maxWidth: 260, padding: '8px 12px' }}><option value="todos">Todos os formatos</option><option>Agente etiológico</option><option>Classe de antibiótico</option><option>Antibiótico específico</option></select>
+      <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar agente, classe, antibiótico..." style={{ ...inputStyle(C), maxWidth: 340, padding: '8px 12px' }} />
+    </div>
+    {showForm && <Card C={C} style={{ marginBottom: 16 }}>
+      <h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editing ? 'Editar' : 'Novo'} registro</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+        <div><FormLabel C={C}>Tipo de organização</FormLabel><select value={form.tipo} onChange={e => setForm({...form, tipo: e.target.value})} style={inputStyle(C)}><option>Agente etiológico</option><option>Classe de antibiótico</option><option>Antibiótico específico</option></select></div>
+        <FormInput C={C} label="Agente etiológico / microrganismo" value={form.agente} onChange={v => setForm({...form, agente: v})} />
+        <FormInput C={C} label="Classe" value={form.classe} onChange={v => setForm({...form, classe: v})} />
+        <FormInput C={C} label="Nome do antibiótico" value={form.antibiotico} onChange={v => setForm({...form, antibiotico: v})} />
+      </div>
+      <FormLabel C={C} style={{ marginTop: 12 }}>Cobertura / espectro</FormLabel><textarea value={form.cobertura} onChange={e => setForm({...form, cobertura: e.target.value})} style={{ ...inputStyle(C), minHeight: 90 }} placeholder="Ex.: Gram positivos, Gram negativos, anaeróbios, Pseudomonas, MRSA..." />
+      <FormLabel C={C} style={{ marginTop: 12 }}>Resistências / não cobre</FormLabel><textarea value={form.resistencia} onChange={e => setForm({...form, resistencia: e.target.value})} style={{ ...inputStyle(C), minHeight: 70 }} placeholder="Ex.: não cobre MRSA, ESBL, KPC; resistência intrínseca..." />
+      <FormLabel C={C} style={{ marginTop: 12 }}>Mecanismo de ação</FormLabel><textarea value={form.mecanismoAcao || form.doseHabitual || ''} onChange={e => setForm({...form, mecanismoAcao: e.target.value})} style={{ ...inputStyle(C), minHeight: 70 }} placeholder="Ex.: inibe síntese de parede celular; liga-se à subunidade 50S; inibe DNA girase/topoisomerase..." />
+      <FormLabel C={C} style={{ marginTop: 12 }}>Observações pessoais</FormLabel><textarea value={form.observacoes} onChange={e => setForm({...form, observacoes: e.target.value})} style={{ ...inputStyle(C), minHeight: 60 }} />
+      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvar}>Salvar</Button><Button C={C} variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button></div>
+    </Card>}
+    {filtrados.length === 0 && !showForm ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.Activity size={34} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhum registro cadastrado. Clique em “Novo registro”.</div></Card> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>{filtrados.map(a => <Card key={a.id} C={C} hover><div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}><Badge C={C}>{a.tipo}</Badge>{a.classe && <Badge C={C} color="soft">{a.classe}</Badge>}</div><h4 className="lumen-serif" style={{ fontSize: 18, margin: '4px 0 8px', fontWeight: 500, color: C.text }}>{a.antibiotico || a.agente || a.classe}</h4>{a.agente && <div style={{ fontSize: 12.5, color: C.textSoft, marginBottom: 6 }}><strong>Agente:</strong> {a.agente}</div>}{a.cobertura && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}><strong>Cobertura:</strong><br />{a.cobertura}</div>}{a.resistencia && <div style={{ marginTop: 8, padding: 10, borderRadius: 8, background: C.error + '12', color: C.error, fontSize: 12.5, lineHeight: 1.45, whiteSpace: 'pre-wrap' }}><strong>Não cobre / atenção:</strong><br />{a.resistencia}</div>}{(a.mecanismoAcao || a.doseHabitual) && <div style={{ marginTop: 8, fontSize: 12.5, color: C.textMuted, whiteSpace: 'pre-wrap' }}><strong>Mecanismo de ação:</strong> {a.mecanismoAcao || a.doseHabitual}</div>}<div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}><button onClick={() => { setForm({ ...a, mecanismoAcao: a.mecanismoAcao || a.doseHabitual || '' }); setEditing(a.id); setShowForm(true); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Editar"><I.Edit size={13} /></button><button onClick={() => excluir(a.id)} style={{ padding: 4, color: C.textSoft, display: 'flex' }} title="Excluir"><I.Trash size={13} /></button></div></Card>)}</div>}
+  </div>;
+}
+
+// ============= MEDICAMENTOS =============
+// ============= MEDICAMENTOS =============
+function Medicamentos({ medicamentos, setMedicamentos, C }) {
+  const [filtroCategoria, setFiltroCategoria] = useState('todas');
+  const [filtroEsp, setFiltroEsp] = useState('todas');
+  const [filtroDoenca, setFiltroDoenca] = useState('todas');
+  const [busca, setBusca] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ nome: '', classe: '', categoria: 'Antibióticos', especialidade: 'infecto', doenca: '', prescricao: '', indicacao: '', dose: '', diluicao: '', velocidade: '', doseMax: '', ajusteRenal: '', cuidados: '', obs: '', tags: [] });
+
+  const doencas = [...new Set(medicamentos
+    .filter(m => filtroEsp === 'todas' || (m.especialidade || m.tema || 'outros') === filtroEsp)
+    .map(m => m.doenca).filter(Boolean))].sort();
+  const especialidadesComQtd = ESPECIALIDADES.map(e => ({ ...e, qtd: medicamentos.filter(m => (m.especialidade || m.tema || 'outros') === e.id).length }));
+  const doencasPorEspecialidade = (espId) => [...new Set(medicamentos.filter(m => (m.especialidade || m.tema || 'outros') === espId).map(m => m.doenca).filter(Boolean))].sort();
+
+  const filtrados = medicamentos.filter(m => {
+    if (filtroCategoria !== 'todas' && m.categoria !== filtroCategoria) return false;
+    if (filtroEsp !== 'todas' && (m.especialidade || m.tema || 'outros') !== filtroEsp) return false;
+    if (filtroDoenca !== 'todas') {
+      if (filtroDoenca === '__sem_doenca__') { if (m.doenca) return false; }
+      else if ((m.doenca || '') !== filtroDoenca) return false;
+    }
+    const texto = `${m.nome} ${m.classe || ''} ${m.categoria || ''} ${m.indicacao || ''} ${m.doenca || ''} ${m.prescricao || ''}`.toLowerCase();
+    if (busca && !texto.includes(busca.toLowerCase())) return false;
+    return true;
+  });
+
+  const salvar = () => {
+    if (!form.nome.trim() && !form.doenca.trim() && !form.prescricao.trim()) return;
+    const item = { ...form, nome: form.nome.trim() || form.doenca.trim() || 'Prescrição sem nome' };
+    if (editing) setMedicamentos(medicamentos.map(m => m.id === editing ? { ...item, id: editing } : m));
+    else setMedicamentos([{ ...item, id: 'med-' + Date.now() }, ...medicamentos]);
+    setShowForm(false); setEditing(null);
+    setForm({ nome: '', classe: '', categoria: (filtroDoenca !== 'todas' && filtroDoenca !== '__sem_doenca__') ? 'Prescrições por doença' : '', especialidade: filtroEsp !== 'todas' ? filtroEsp : 'infecto', doenca: filtroDoenca !== 'todas' && filtroDoenca !== '__sem_doenca__' ? filtroDoenca : '', prescricao: '', indicacao: '', dose: '', diluicao: '', velocidade: '', doseMax: '', ajusteRenal: '', cuidados: '', obs: '', tags: [] });
+  };
+
+  const abrirNovaPrescricao = (esp = filtroEsp, doenca = '') => {
+    setForm({ nome: '', classe: '', categoria: (doenca && doenca !== '__sem_doenca__') ? 'Prescrições por doença' : '', especialidade: esp !== 'todas' ? esp : 'infecto', doenca: doenca === '__sem_doenca__' ? '' : doenca, prescricao: '', indicacao: '', dose: '', diluicao: '', velocidade: '', doseMax: '', ajusteRenal: '', cuidados: '', obs: '', tags: [] });
+    setEditing(null); setShowForm(true);
+  };
+
+  return <div className="lumen-fade-in">
+    <div style={{ display: 'grid', gridTemplateColumns: sidebarOpen ? 'minmax(0, 1fr) 290px' : 'minmax(0, 1fr) 46px', gap: 16, alignItems: 'start' }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <Button C={C} icon={I.Plus} onClick={() => abrirNovaPrescricao()}>Nova medicação/prescrição</Button>
+          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por droga, doença ou prescrição..." style={{ ...inputStyle(C), maxWidth: 320, padding: '8px 12px' }} />
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}><button onClick={() => setFiltroCategoria('todas')} style={pillStyle(C, filtroCategoria === 'todas')}>Todas categorias</button>{CATEGORIAS_MED.map(c => <button key={c} onClick={() => setFiltroCategoria(c)} style={pillStyle(C, filtroCategoria === c)}>{c}</button>)}</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+          <select value={filtroEsp} onChange={e => { setFiltroEsp(e.target.value); setFiltroDoenca('todas'); }} style={{ ...inputStyle(C), maxWidth: 240, padding: '8px 12px' }}><option value="todas">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select>
+          <select value={filtroDoenca} onChange={e => setFiltroDoenca(e.target.value)} style={{ ...inputStyle(C), maxWidth: 260, padding: '8px 12px' }}><option value="todas">Doenças e medicamentos mais utilizados</option><option value="__sem_doenca__">Medicamentos mais utilizados</option>{doencas.map(d => <option key={d}>{d}</option>)}</select>
+        </div>
+
+        {showForm && <Card C={C} style={{ marginBottom: 16 }}><h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editing ? 'Editar' : 'Nova'} medicação/prescrição</h3><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}><FormInput C={C} label="Nome da medicação/prescrição" value={form.nome} onChange={v => setForm({...form, nome: v})} /><FormInput C={C} label="Classe" value={form.classe} onChange={v => setForm({...form, classe: v})} /><div><FormLabel C={C}>Categoria</FormLabel><select value={form.categoria || ''} onChange={e => setForm({...form, categoria: e.target.value})} style={inputStyle(C)}><option value="">Sem categoria</option>{CATEGORIAS_MED.map(c => <option key={c}>{c}</option>)}</select></div><div><FormLabel C={C}>Especialidade</FormLabel><select value={form.especialidade || 'infecto'} onChange={e => setForm({...form, especialidade: e.target.value})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div><FormInput C={C} label="Doença/condição (opcional; deixe vazio para medicamentos mais utilizados)" value={form.doenca || ''} onChange={v => setForm({...form, doenca: v})} /></div><FormLabel C={C} style={{ marginTop: 12 }}>Prescrição / medicamentos mais utilizados</FormLabel><textarea value={form.prescricao || ''} onChange={e => setForm({...form, prescricao: e.target.value})} placeholder="Ex.: Pneumonia comunitária: ceftriaxona + azitromicina..." style={{ ...inputStyle(C), minHeight: 100 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Indicação</FormLabel><textarea value={form.indicacao} onChange={e => setForm({...form, indicacao: e.target.value})} style={{ ...inputStyle(C), minHeight: 50 }} /><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}><FormInput C={C} label="Dose usual" value={form.dose} onChange={v => setForm({...form, dose: v})} /><FormInput C={C} label="Dose máxima" value={form.doseMax} onChange={v => setForm({...form, doseMax: v})} /><FormInput C={C} label="Ajuste renal" value={form.ajusteRenal} onChange={v => setForm({...form, ajusteRenal: v})} /></div><FormLabel C={C} style={{ marginTop: 12 }}>Diluição</FormLabel><textarea value={form.diluicao} onChange={e => setForm({...form, diluicao: e.target.value})} style={{ ...inputStyle(C), minHeight: 50 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Velocidade de infusão</FormLabel><textarea value={form.velocidade} onChange={e => setForm({...form, velocidade: e.target.value})} style={{ ...inputStyle(C), minHeight: 40 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Cuidados e contraindicações</FormLabel><textarea value={form.cuidados} onChange={e => setForm({...form, cuidados: e.target.value})} style={{ ...inputStyle(C), minHeight: 60 }} /><FormLabel C={C} style={{ marginTop: 12 }}>Observações</FormLabel><textarea value={form.obs} onChange={e => setForm({...form, obs: e.target.value})} style={{ ...inputStyle(C), minHeight: 50 }} /><div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvar}>Salvar</Button><Button C={C} variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button></div></Card>}
+        {filtrados.length === 0 ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.Pill size={32} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhum medicamento/prescrição com esses filtros.</div></Card> : <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{filtrados.map(m => <MedCard key={m.id} m={m} C={C} onEdit={() => { setForm({...m, especialidade: m.especialidade || m.tema || 'infecto'}); setEditing(m.id); setShowForm(true); }} onDelete={() => { if (confirm('Deletar?')) setMedicamentos(medicamentos.filter(x => x.id !== m.id)); }} />)}</div>}
+      </div>
+
+      <aside style={{ position: 'sticky', top: 82, alignSelf: 'start' }}>
+        <Card C={C} style={{ padding: sidebarOpen ? 14 : 8 }}>
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ width: '100%', display: 'flex', justifyContent: sidebarOpen ? 'space-between' : 'center', alignItems: 'center', color: C.text, fontWeight: 700 }}>
+            {sidebarOpen && <span>Especialidades</span>}{sidebarOpen ? <I.ChevR size={15} /> : <I.ChevL size={15} />}
+          </button>
+          {sidebarOpen && <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button onClick={() => { setFiltroEsp('todas'); setFiltroDoenca('todas'); }} style={{ ...pillStyle(C, filtroEsp === 'todas'), textAlign: 'left', borderRadius: 8 }}>Todas ({medicamentos.length})</button>
+            {especialidadesComQtd.map(e => <div key={e.id} style={{ border: `1px solid ${filtroEsp === e.id ? C.accent : C.borderSoft}`, borderRadius: 10, padding: 8, background: filtroEsp === e.id ? C.accentSoft : 'transparent' }}>
+              <button onClick={() => { setFiltroEsp(e.id); setFiltroDoenca('todas'); }} style={{ width: '100%', textAlign: 'left', color: filtroEsp === e.id ? C.accent : C.text, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}><span>{e.nome}</span><span>{e.qtd}</span></button>
+              {filtroEsp === e.id && <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                <button onClick={() => abrirNovaPrescricao(e.id, '')} style={{ textAlign: 'left', color: C.accent, fontSize: 12, fontWeight: 700 }}>+ Medicamentos mais utilizados</button>
+                <button onClick={() => { const nome = prompt('Nome da doença/condição:'); if (nome) abrirNovaPrescricao(e.id, nome); }} style={{ textAlign: 'left', color: C.accent, fontSize: 12, fontWeight: 700 }}>+ Adicionar doença</button>
+                {doencasPorEspecialidade(e.id).map(d => <button key={d} onClick={() => setFiltroDoenca(d)} style={{ textAlign: 'left', color: filtroDoenca === d ? C.accent : C.textMuted, fontSize: 12, padding: '4px 0' }}>• {d}</button>)}
+              </div>}
+            </div>)}
+          </div>}
+        </Card>
+      </aside>
+    </div>
+  </div>;
+}
+
+const pillStyle = (C, active) => ({
+  padding: '6px 12px', borderRadius: 18, fontSize: 12.5, fontWeight: 600,
+  background: active ? C.accent : 'transparent', color: active ? '#fff' : C.textMuted,
+  border: `1.5px solid ${active ? C.accent : C.border}`
+});
+
+function MedCard({ m, C, onEdit, onDelete }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <Card C={C} style={{ padding: 0, overflow: 'hidden' }}>
+      <button onClick={() => setAberto(!aberto)} style={{
+        width: '100%', padding: 16, textAlign: 'left',
+        display: 'flex', alignItems: 'center', gap: 14, color: C.text
+      }}>
+        <span style={{ color: C.accent }}><I.Pill size={18} /></span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: C.text }}>{m.nome}</div>
+          <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2 }}>
+            {[m.classe, m.doenca ? m.categoria : '', m.doenca].filter(Boolean).join(' • ')}
+          </div>
+        </div>
+        {aberto ? <I.ChevU size={16} /> : <I.ChevD size={16} />}
+      </button>
+      {aberto && (
+        <div style={{ padding: '0 16px 16px', borderTop: `1px solid ${C.borderSoft}`, paddingTop: 14 }}>
+          <DetailRow label="Especialidade" value={(ESPECIALIDADES.find(t => t.id === (m.especialidade || m.tema)) || {}).nome} C={C} />
+          <DetailRow label="Grupo" value={m.doenca || 'Medicamentos mais utilizados'} C={C} />
+          <DetailRow label="Prescrição favorita" value={m.prescricao} C={C} highlight />
+          <DetailRow label="Indicação" value={m.indicacao} C={C} />
+          <DetailRow label="Dose" value={m.dose} C={C} />
+          <DetailRow label="Diluição" value={m.diluicao} C={C} />
+          <DetailRow label="Velocidade" value={m.velocidade} C={C} />
+          <DetailRow label="Dose máxima" value={m.doseMax} C={C} />
+          <DetailRow label="Ajuste renal" value={m.ajusteRenal} C={C} />
+          <DetailRow label="Cuidados" value={m.cuidados} C={C} highlight />
+          <DetailRow label="Observações" value={m.obs} C={C} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <Button C={C} variant="secondary" size="sm" icon={I.Edit} onClick={onEdit}>Editar</Button>
+            <Button C={C} variant="ghost" size="sm" icon={I.Trash} onClick={onDelete}>Deletar</Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+const DetailRow = ({ label, value, C, highlight }) => {
+  if (!value) return null;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ fontSize: 10.5, color: C.textSoft, fontWeight: 700,
+        letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
+      <div style={{
+        fontSize: 13.5, color: highlight ? C.error : C.text, lineHeight: 1.5,
+        background: highlight ? C.error + '15' : 'transparent',
+        padding: highlight ? '6px 10px' : 0, borderRadius: 6,
+        borderLeft: highlight ? `3px solid ${C.error}` : 'none'
+      }}>{value}</div>
+    </div>
+  );
+};
+
+// ============= FLUXOGRAMAS =============
+function Fluxogramas({ fluxogramas, setFluxogramas, C }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [filtroTema, setFiltroTema] = useState('todos');
+  const [form, setForm] = useState({ titulo: '', tema: 'cardio', texto: '', imagem: '', tags: [] });
+  const filtrados = fluxogramas.filter(f => filtroTema === 'todos' || f.tema === filtroTema);
+  const salvar = () => {
+    if (!form.titulo.trim()) return;
+    if (editing) setFluxogramas(fluxogramas.map(f => f.id === editing ? { ...form, id: editing } : f));
+    else setFluxogramas([{ ...form, id: 'fl-' + Date.now(), criadoEm: new Date().toISOString() }, ...fluxogramas]);
+    setShowForm(false); setEditing(null); setForm({ titulo: '', tema: 'cardio', texto: '', imagem: '', tags: [] });
+  };
+  const handleImage = (e) => { const file = e.target.files?.[0]; if (!file) return; if (file.size > 2 * 1024 * 1024) { alert('Imagem muito grande (máx 2MB).'); return; } const reader = new FileReader(); reader.onload = () => setForm({...form, imagem: reader.result}); reader.readAsDataURL(file); };
+  return <div className="lumen-fade-in">
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, alignItems: 'center', flexWrap: 'wrap', gap: 10 }}><p style={{ color: C.textMuted, fontSize: 14, margin: 0 }}>Seus próprios fluxogramas e algoritmos médicos.</p><Button C={C} icon={I.Plus} onClick={() => { setShowForm(true); setEditing(null); }}>Novo fluxograma</Button></div>
+    <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}><select value={filtroTema} onChange={e => setFiltroTema(e.target.value)} style={{ ...inputStyle(C), maxWidth: 260, padding: '8px 12px' }}><option value="todos">Todas as especialidades</option>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div>
+    {showForm && <Card C={C} style={{ marginBottom: 16 }}><h3 className="lumen-serif" style={{ fontSize: 18, margin: '0 0 14px' }}>{editing ? 'Editar' : 'Novo'} fluxograma</h3><FormInput C={C} label="Título" value={form.titulo} onChange={v => setForm({...form, titulo: v})} /><div style={{ marginTop: 12 }}><FormLabel C={C}>Especialidade</FormLabel><select value={form.tema} onChange={e => setForm({...form, tema: e.target.value})} style={inputStyle(C)}>{ESPECIALIDADES.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}</select></div><FormLabel C={C} style={{ marginTop: 12 }}>Imagem (opcional)</FormLabel><input type="file" accept="image/*" onChange={handleImage} style={{ fontSize: 13, color: C.textMuted }} />{form.imagem && <img src={form.imagem} alt="" style={{ maxWidth: '100%', maxHeight: 200, marginTop: 8, borderRadius: 8 }} />}<FormLabel C={C} style={{ marginTop: 12 }}>Texto explicativo</FormLabel><textarea value={form.texto} onChange={e => setForm({...form, texto: e.target.value})} style={{ ...inputStyle(C), minHeight: 120 }} /><div style={{ display: 'flex', gap: 8, marginTop: 14 }}><Button C={C} icon={I.Save} onClick={salvar}>Salvar</Button><Button C={C} variant="ghost" onClick={() => { setShowForm(false); setEditing(null); }}>Cancelar</Button></div></Card>}
+    {filtrados.length === 0 && !showForm ? <Card C={C} style={{ textAlign: 'center', padding: 60 }}><I.GitBranch size={32} /><div style={{ fontSize: 15, color: C.textMuted, marginTop: 12 }}>Nenhum fluxograma com esse filtro.</div></Card> : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>{filtrados.map(f => { const tema = ESPECIALIDADES.find(t => t.id === f.tema); return <Card key={f.id} C={C} hover style={{ padding: 0, overflow: 'hidden' }}>{f.imagem && <div style={{ height: 160, background: C.bg, overflow: 'hidden' }}><img src={f.imagem} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>}<div style={{ padding: 14 }}>{tema && <Badge C={C}>{tema.nome}</Badge>}<h4 className="lumen-serif" style={{ fontSize: 16, margin: '8px 0 6px', color: C.text }}>{f.titulo}</h4>{f.texto && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{f.texto}</div>}<div style={{ display: 'flex', gap: 6, marginTop: 12, justifyContent: 'flex-end' }}><button onClick={() => { setForm(f); setEditing(f.id); setShowForm(true); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }}><I.Edit size={13} /></button><button onClick={() => { if (confirm('Deletar?')) setFluxogramas(fluxogramas.filter(x => x.id !== f.id)); }} style={{ padding: 4, color: C.textSoft, display: 'flex' }}><I.Trash size={13} /></button></div></div></Card>; })}</div>}
+  </div>;
+}
+
+// ============= RENDER =============
+// ============= RENDER =============
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
